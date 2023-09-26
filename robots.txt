@@ -11,5 +11,7 @@ Disallow: /css/
 Disallow: /fonts/
 Disallow: /vendors/
 Disallow: /fancybox/
+Disallow: /.git/
+Disallow: /*.bat
 Sitemap: https://wsyoverflow.github.io/sitemap.xml
 Sitemap: https://wsyoverflow.github.io/baidusitemap.xml
