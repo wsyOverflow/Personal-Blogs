@@ -107,13 +107,7 @@ OSC pipeline主要由如图[Fig-2](#[Fig-2])中的五个阶段组成：
 
 对于LOD的支持，可以选择将几何的不同LOD作为不同的island，但这会导致同一几何的不同LOD的cache完全独立，无法共享。另一种做法是不同LOD仍然使用同一连续UV空间，这样不同LOD的cache也能复用。这样的连续UV空间生成可以通过在生成几何LOD过程中，对顶点的简化同样应用到island uv上。
 
-### 3.1.6 Effect examples
-
-AO本身就与view无关，因此可以直接cache AO系数。
-
-对于软阴影，可以cache光源到surface point的距离或者0/1可见性。在计算屏幕空间软阴影时，则可以使用cache数据计算得到。
-
-### 3.1.7 Thoughts
+### 3.1.6 Thoughts
 
 1. 所有effect的cache entry的确定都是统一的，应该都是屏幕像素的texture coord(hash key)来确定。只是不同的effect可以调整其mipmap的bias。
 
@@ -141,9 +135,11 @@ AO本身就与view无关，因此可以直接cache AO系数。
      - 如果是直接使用VT的做法，那么cache entry则使用physical texture保存。而texture的格式是有限制的，灵活性受限
      - 文中描述的是VT的原理，但存储使用自定义的buffer进行，SSBO可以自定义结构体。
      
-   - 文中描述的hash table实现思路，似乎效率不高，查询需要遍历，没有给出具体的hash设计。
+   - 从后续“memory requirement”部分来看，本文采用的应该是hash table的实现，但没有给出具体的hash设计。
 
      因此可以考虑实现一个高效的GPU上的hash table，可以避免virtual texture的开销（经过virtual texture的间接寻址过程），但同样会带来hash碰撞时的线性查找过程，以及hash table的大小难以确定，最大为每个viewer都是不重叠的情况。具体到底哪个更高效未知。
+
+2. 对于trilinear filter，文中提出之前的工作要么是不支持硬件加速，要么会引入1-pixel border。但文中的cache也一样不支持硬件加速的trilinear filter，而是使用重采样软件计算的。
 
 3. memory management的实现：SSBO vs. texture
 
@@ -189,9 +185,11 @@ Light probe、volumetric fog、volume shadow
 
 ### 3.3.1 Hard Shadows
 
-
+硬阴影只需要记录着色点到光源的可见性，cache在OSC。每个texel使用 2 Bytes记录16根shadow rays。
 
 ### 3.3.2 Ambient Occlusion
+
+AO缓存在OSC，具有时序累积过程。每个texel共 4 Bytes：记录16-bit AO值，以及16-bit 样本数量（最大样本数量64）。
 
 
 
@@ -209,7 +207,20 @@ Light probe、volumetric fog、volume shadow
 
 <img src="/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230925161736654.png" alt="image-20230925161736654" style="zoom: 67%;" />
 
+# 4 Evaluation
 
+
+
+## 4.1 Memory requirements
+
+每个texel block具有 8x8 texels，effect定义具体的texel大小，如3.3节。texel block的内存回收策略采用：当经过一定帧，没有被访问到后的texel block返回free list。
+
+对于比较远或者比较小的物体，有可能对应的mip层级分辨率不足8x8或者texel block只有一个texel命中，此时会导致存储利用率降低。因此对于bias为2的版本，理论上存储开销为unbiased版本的1/16，但实际上只有 1.5~3 倍的减少。对于texel的更新数量能达到理论上的减少，因为有texel mask。
+
+除了meta data（texel block的访问时间）外，内存管理还会引入额外的存储开销：
+
+- memory allocation：每个hash table entry使用键值对（64bit键，32bit texel block index）。为了保证hash table的性能，hash table的容量选择150%的block总数，不高于75%的填充率。
+- work queues：每项表示一个要执行的texel block，采用16 bytes 键值对
 
 # Reference
 
