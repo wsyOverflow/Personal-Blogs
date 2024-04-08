@@ -31,7 +31,7 @@ mathjax: true
 
 ## 3.1 On-Surface Caches
 
-On-Surface Cache(OSC)采用类似于[[1]](#[1])的管线。首先预处理阶段需要为mesh生成唯一表示的纹理空间。作者通过将一定数量的相连接的面片划分成island单位，每个island有独立的texture space，可以生成triangle lookup texture，即每个texel的triangle id。
+On-Surface Cache(OSC)采用类似于[[2]](#[2])的管线。首先预处理阶段需要为mesh生成唯一表示的纹理空间。作者通过将一定数量的相连接的面片划分成island单位，每个island有独立的texture space，可以生成triangle lookup texture，即每个texel的triangle id。
 
 对于cache texture的实现，尽管目前硬件支持virtual texture，但64KB的page大小对于本系统过大，因此作者采用软件实现的cache系统。为了更好的spatio-temporal重用，作者设计了用于访问所有virtual textures的单个hash map，hash map中存储的是指向cache entry(实际数据)的hash entry。一个page table/hash map entry（页表项）由如下部分组成：
 
@@ -99,9 +99,19 @@ OSC pipeline主要由如图[Fig-2](#[Fig-2])中的五个阶段组成：
 
 ### 3.1.4 Triangle lookup rendering
 
-在cache update的计算过程中，需要从cache texel对应到surface location，获取该位置处三角形的插值属性。这里需要用到triangle lookup textures，用来记录每个像素的triangle id与重心坐标。在texel shading管线中，该texture使用预计算得到，但这样无法支持动态场景以及内存开销较大，难以实际应用。
+在cache update的计算过程中，需要从cache texel对应到surface location，获取该位置处三角形的插值属性。这里需要用到triangle lookup textures，用来记录每个像素的triangle id。在texel shading管线中，该texture使用预计算得到，但这样无法支持动态场景以及内存开销较大，难以实际应用。
 
 作者选择通过一个indirect rasterization管线实时生成triangle lookup texture。同时将过程抽象为一个effect，对其应用effect的内存管理机制。不同的是，triangle lookup "effect" 会被其他effect使用到，而且同一island的不同instance可以复用。此外，对于请求的cache block，虽然可以知道属于哪个island，但无法确定属于哪个三角形。因此选择将整个island送入indirect rasterization管线。由于island最多有256个三角形，同时triangle lookup不会频繁更新，因此这个阶段还算高效。
+
+如何得到渲染需要的gbuffer数据？
+
+每个view的visibility pass生成的visibility buffer得到的是屏幕像素的visibility信息，这在cache的texture space下并不连续。例如，即使8x8的texel block完全位于一个三角形内，也可能有部分texel没有visibility数据。想要在cache space下生成visibility信息，可以是：
+
+1. view的visibility buffer得到命中的cache entry
+
+2. 为cache entry的每个texel遍历其所属island的每个三角形，判断texel属于哪个三角形。
+
+   判断过程使用 texel 的uv与三角形顶点的uv，还需要对未找到所属三角形的 texel 应用保守光栅化技术
 
 ### 3.1.5 Geometric LOD support
 
@@ -224,4 +234,6 @@ AO缓存在OSC，具有时序累积过程。每个texel共 4 Bytes：记录16-bi
 
 # Reference
 
-<a name="[1]">[1]</a> K. E. Hillesland and J. C. Yang. 2016. Texel Shading. In Proceedings of the 37th Annual Conference of the European Association for Computer Graphics: Short Papers (Lisbon, Portugal) (EG ’16). Eurographics Association, Goslar, DEU, 73–76.  
+<a name="[1]">[1]</a> Alexander Weinrauch. 2023. Effect-based Multi-viewer Caching for Cloud-native Rendering. *siggraph* (2023).
+
+<a name="[2]">[2]</a> K. E. Hillesland and J. C. Yang. 2016. Texel Shading. In Proceedings of the 37th Annual Conference of the European Association for Computer Graphics: Short Papers (Lisbon, Portugal) (EG ’16). Eurographics Association, Goslar, DEU, 73–76.  
