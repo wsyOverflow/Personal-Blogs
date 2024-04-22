@@ -22,9 +22,9 @@ particle tracing算法从光源出发，进行追踪，与表面相交时在交�
 $$
 (p_j, \omega_j, \beta_j)
 $$
-其中，$\beta_j$ 为throughput与采样概率密度的比值。
+其中，$\beta_j$ 为throughput与采样概率密度的比值，这个采样概率密度指的是? :confused: 。
 
-> throughput与flux/功率类似，但不是物理量，指的是某一时刻光子携带的能量，例如经过一次反射后会乘上BSDF系数，相当于scaled radiance
+> throughput与flux/功率类似，但不是物理量，指的是某一时刻光子携带的能量，例如经过一次反射后会乘上BSDF系数，相当于scaled radiance。那么 $\beta_j$ 也就是 $f\cdot radiance / pdf=f\cdot L_i / p$ 正好是蒙特卡洛积分的重要性采样形式。
 
 基于tracing阶段得到的particle，我们可以计算任意测量的估计。测量量使用重要性函数 $W_e(p,\omega)$ 来描述，$W_e$应该满足测量量的定义与估计量之间的无偏，
 $$
@@ -82,9 +82,17 @@ $$
 
 kernel method可以得到更加平滑的PDF，给定核函数(kernel function) $k(x)$，有 $\int_{-\infin}^{+\infin} k(x)\mathrm{d}x = 1$。对于 $N$ 个样本，在$x_i$ 处的的核估计量(kernel estimator)为
 $$
-\hat{p}(x)=\frac{1}{Nh}\sum_{i=1}^N k\left(\frac{x-x_i}{h}\right)
+\hat{p}(x)=\frac{1}{Nh}\sum_{i=1}^N k\left(\frac{x-x_i}{h}\right) \label{kernel-estimator} \tag{4}
 $$
-其中，$h$ 是窗口大小(window width)（或者平滑参数、kernel bandwidth）。给定 $N$ 个样本，核估计就是在每个样本上应用核估计函数，然后将这些核函数值加起来形成整体的密度估计。下图就是1D下应用 Epanechnikov kernel（$k(t) = 0.75(1-2t^2)/\sqrt{5}, \space t < \sqrt{5};0,\space  otherwise$）的示例，每条圆弧形虚曲线都对应在某一点处的核估计，所有核估计形成实线形状的整体密度估计
+其中，$h$ 是窗口大小(window width)（或者平滑参数、kernel bandwidth）。给定 $N$ 个样本，核估计就是在每个样本上应用核估计函数，然后将这些核函数值加起来形成整体的密度估计。下图就是1D下应用 Epanechnikov kernel 的示例，核函数为
+$$
+k(t) = 
+\begin{cases}
+0.75(1-2t^2)/\sqrt{5}, \quad t < \sqrt{5} \\ 
+0,\quad  otherwise
+\end{cases}
+$$
+图中每条圆弧形虚曲线都对应在某一点处的核估计，所有核估计形成实线形状的整体密度估计
 
 <img src="/images/Paper Notes/Ray Tracing/Path Space Filtering.assets/image-20231224143050504.png" alt="image-20231224143050504" style="zoom: 33%;" />
 
@@ -92,24 +100,37 @@ $$
 
 kernel method的关键问题是 $h$ 的选取，太宽会模糊具有许多样本的区域的相关细节；太窄会导致PDF在尾部的分布由于样本不够而凹凸不平。Nearest-neighbor 基于局部样本密度来自适应选择窗口大小，附近样本越多，窗口越小；反之，窗口越大。
 
-nth nearest neighbor estimate 选择 $Nth$ nearest 样本到估计点 $x$ 的距离 $d_N(x)$ 作为窗口大小，如下
+nth nearest neighbor estimate 选择 $Nth$ nearest 样本到估计点 $x$ 的距离 $d_N(x)$ 作为窗口大小，代入到 $\eqref{kernel-estimator}$ 有
 $$
 \hat{p}(x)=\frac{1}{Nd_N(x)}\sum_{i=1}^Nk\left(\frac{x-x_i}{d_N(x)}\right)
 $$
 扩展到 $d$ 维，有
 $$
-\hat{p}(x)=\frac{1}{N(d_N(x))^d}\sum_{i=1}^Nk\left(\frac{x-x_i}{d_N(x)}\right) \label{density-estimate} \tag{4}
+\hat{p}(x)=\frac{1}{N(d_N(x))^d}\sum_{i=1}^Nk\left(\frac{x-x_i}{d_N(x)}\right) \label{density-estimate} \tag{5}
 $$
 将密度估计代入到 $p$ 点在出射方向 $\omega_o$ 上的出射radiance测量 $\eqref{exit-radiance}$ ，能够得到以下估计量
 $$
-L_o(p, \omega_o) \approx \frac{1}{N_p(d_N(p))^2}\sum_{j=1}^{N_p}k\left(\frac{p-p_j}{d_N(p)}\right)\beta_jf(p,\omega_o,\omega_j) \label{exit-radiance-pm} \tag{5}
+L_o(p, \omega_o) \approx \frac{1}{N_p(d_N(p))^2}\sum_{j=1}^{N_p}k\left(\frac{p-p_j}{d_N(p)}\right)\beta_jf(p,\omega_o,\omega_j) \label{exit-radiance-pm} \tag{6}
 $$
-其中 $N_p$ 表示光子数量，重要性函数使用密度估计方程代替，同时对于超出 N nearest距离的采样点，核函数为0。这个估计过程是先在 $p$ 点的 tangent plane 上采样一点 $p_j$ (即内层积分的 $p'$)，因此这里的密度估计是2维。如前所述，$\beta_j$ 是 $p_j$ 在入射方向 $\omega_j$ 收到的 throughput与采样概率密度（渲染方程积分的采样）的比值。注意观察与标准渲染方程积分估计的区别：
+其中 $N_p$ 表示光子数量，重要性函数使用密度估计方程代替，同时对于超出 N nearest距离的采样点，核函数为0。这个估计过程是先在 $p$ 点的 tangent plane 上采样一点 $p_j$ (即内层积分的 $p'$)，因此这里的密度估计是2维。如前所述，$\beta_j$ 是 $p$ 在入射方向 $\omega_j$ 收到的 throughput与采样概率密度（渲染方程积分的采样）的比值。注意观察与标准渲染方程积分估计的区别：
 
 - 渲染方程积分采样点永远是着色点，而这里近似为了着色点附近区域以某一密度估计下的采样点。这是一种着色点邻近区域的插值过程。
 - 如果将着色点附近区域内的采样改为（着色点处为1，其余为0）的分布，上式恰好可以退化为渲染方程
 
-$\eqref{exit-radiance-pm}$ 在光子上的测量是一种插值过程，该过程引入的偏差难以估计，但通过提高光子密度往往可以得到更好的结果。如果直接光照使用传统方式，而对于更加低频的间接光通常问题不大。
+$\eqref{exit-radiance-pm}$​ 在光子上的测量是一种插值过程，该过程引入的偏差难以估计，但通过提高光子密度往往可以得到更好的结果。如果直接光照使用传统方式，而对于更加低频的间接光通常问题不大。
+
+>  $\eqref{exit-radiance-pm}$ 式过程的理解，$\eqref{exit-radiance-pm}$ 是对以下积分的近似：
+> $$
+> \int_{S^2}L_i(p,\omega_i)f(p,\omega_o,\omega_i)|\cos\theta_i|\space\mathrm{d}\omega_i = \int_A\int_{S^2}\hat{p}(p')L_i(p',\omega_i)f(p',\omega_o,\omega_i)|\cos\theta_i|\space\mathrm{d}\omega_i\mathrm{d}A(p')
+> $$
+> particle tracing与path tracing的不同，导致二者在求渲染方程积分上不同
+>
+> - path tracing：从着色点出发，采样不同的光线，对光线交点着色得到光线方向上的入射radiance。光线相交于表面后，再采样下一级反射方向，递归执行。
+> - particle tracing：从光源出发，
+>
+> 每个光子携带了其从光源传播到当前位置整条光路累积后的 $f \cdot radiance / pdf$。光子映射本质上是采样着色点周围的光子，作为着色点的近似，是一种filter过程。因此渲染方程则近似为了对光子的加权平均，权重与光子的分布有关
+>
+> 从上式积分形式看，外层是对表面上（着色点附近）光子的积分，而内层积分则是对于光子 $p'$ 的 $\beta$ 积分。
 
 [2.2.1 光子映射算法](#2.2.1 光子映射算法) 小节描述的最初形式的光子映射算法先进行光子生成，存放到光子贴图上；再进行测量过程。这会导致光子数量受存储空间限制，当存储耗尽时，质量就无法再进一步提高，限制了算法上限。
 
@@ -146,12 +167,57 @@ $$
 
 # 3 Approach
 
-本文提出的path space filter算法过程如下图所示：绿色部分展示了通过平均顶点 $x_i$ 的球邻域 $\mathcal{B}(n)$ 中顶点收到的光路贡献 $c_{s_i+j}$ 来平滑到 $x_i$ 的光路贡献 $c_i$ 。
+本文提出的path space filter算法过程如下图所示：绿色部分展示了通过filter顶点 $x_i$ 的球邻域 $\mathcal{B}(n)$ 中顶点收到的光路贡献 $c_{s_i+j}$ 来近似到 $x_i$ 的光路贡献 $c_i$ ，其中 $\alpha_i$ 为 $x_i$ 到相机方向的衰减系数。
 
 <img src="/images/Paper Notes/Ray Tracing/Path Space Filtering.assets/image-20240114173422688.png" alt="image-20240114173422688" style="zoom: 50%;" />
+
+图像上像素计算为累积 $\alpha_i\cdot \bar{c_i}$，即累积每根采样光线
+$$
+\bar{c_i} = \frac{\sum_{j=0}^{b^m-1} \mathcal{X}_{\mathcal{B}(n)}(x_{s_i+j} - x_i) \cdot w_{i,j} \cdot c_{s_i+j}}{\sum_{j=0}^{b^m-1} \mathcal{X}_{\mathcal{B}(n)}(x_{s_i+j} - x_i)\cdot w_{i,j}} \label{path-filter} \tag{7}
+$$
+$\eqref{path-filter}$ 式遍历以 $x_i$ 为中心、半径为 $r(n)$ 的领域 $\mathcal{B}(n)$ 内的所有顶点 $x_{s_i+j}$，对每个顶点的光路贡献 $c_{s_i+j}$ 进行加权平均，得到 $\bar{c_i}$ 。其中 $n$ 为每个像素的光线总数，在每次迭代 1spp 的情况下（每次filter都会为像素采样一根光线），也可视为filter迭代次数。$\eqref{path-filter}$ 式的filter过程可以迭代执行，例如再由 $\bar{c_i}$ 计算 $\bar{\bar{c_i}}$，虽然高效，但光照细节被一定模糊，如下图
+
+<img src="/images/Paper Notes/Ray Tracing/Path Space Filtering.assets/image-20240418134159177.png" alt="image-20240418134159177" style="zoom: 80%;" />
+
+在迭代filter过程中，随着迭代次数，filter半径逐渐降低，初始半径为 $r_0$，以及参数 $\alpha \in (0, 1)$
+$$
+r(n) = \frac{r_0}{n^{\alpha}}
+$$
+因此，随着迭代次数的增加，filter半径逐渐减少，filter区域逐渐消失，有 $\lim_{n\rightarrow \infty}\bar{c_i}=c_i$​ 。
+
+## 3.1 Weighting by Similarity
+
+一些降噪处理中，当光线于物体相交时，通常会根据交点材质来选择是否增加更多光线降低噪声，这被称为 trajectory splitting。$\eqref{path-filter}$ 式中的权重 $w_{i,j}$ 需要评估光路贡献 $c_{s_i+j}$ 通过轨迹分割在 $x_i$ 上被创建的可能性。下图是 path tracer结果、path filter后的结果，以及不同权重选择的效果对比。
+
+<img src="/images/Paper Notes/Ray Tracing/Path Space Filtering.assets/image-20240418141125937.png" alt="image-20240418141125937" style="zoom:80%;" />
+
+<center> 左上图是16 spp的path tracer结果，左下图是带有path space filter的结果。</center>
+<center>右侧图展示了单个权重的影响，从上到小依次为：uniform weights；normal weights；surface weights</center>
+
+### 3.1.1 Blur across geometry
+
+使用点 $x_i$ 与 $x_{s_i+j}$ 的法线相似度 $(n_i \cdot n_{s_i+j})$，实现中，只会选择  $(n_i \cdot n_{s_i+j}) \geq 0.95$ 的采样点。
+
+### 3.1.2 Blur across textures
+
+表面材质属性。比较 $x_i$ 与 $x_{s_i+j}$ 的材质属性差异，例如 BSDF。进选择低于阈值的采样点。
+
+### 3.1.3 Blurred shadows
+
+光源可见性的处理。
+
+对于点光源而言，点光源的阴影边缘是锐利，因此为了不模糊阴影边缘，选择仅会选择可见性一致的采样点。
+
+对于ao或者环境光，可以通过比较进入 $x_i$ 与 $x_{s_i+j}$ 的半球面的光线长度差异，仅选择差异在阈值内的采样点。
+
+## 3.2 Range Search
+
+$\eqref{path-filter}$ 式中的特征函数 $\mathcal{X}_{\mathcal{B}(n)}(x_{s_i+j} - x_i)$ 用于在 $x_i$ 的邻域 $\mathcal{B}(n)$ 中选择 $x_{s_i+j}$ 。该过程涉及到的range search可以使用 hash grid、bvh或者kd-tree结构来实现高效查询。
 
 
 
 # Reference
 
-<a name="[1]">[1]</a> Pharr, M., Jakob, W., Humphreys, G., 2017. Physically based rendering: from theory to implementation. EBSCO eBooks. 963~972.
+<a name="[1]">[1]</a> Alexander Keller, Ken Dahm, and Nikolaus Binder. 2016. Path space filtering. In *Monte Carlo and Quasi-Monte Carlo Methods: MCQMC, Leuven, Belgium, April 2014*, 2016. Springer, 423–436.
+
+<a name="[2]">[2]</a> Pharr, M., Jakob, W., Humphreys, G., 2017. Physically based rendering: from theory to implementation. EBSCO eBooks. 963~972.
