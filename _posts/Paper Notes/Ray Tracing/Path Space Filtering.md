@@ -175,7 +175,7 @@ $$
 $$
 \bar{c_i} = \frac{\sum_{j=0}^{b^m-1} \mathcal{X}_{\mathcal{B}(n)}(x_{s_i+j} - x_i) \cdot w_{i,j} \cdot c_{s_i+j}}{\sum_{j=0}^{b^m-1} \mathcal{X}_{\mathcal{B}(n)}(x_{s_i+j} - x_i)\cdot w_{i,j}} \label{path-filter} \tag{7}
 $$
-$\eqref{path-filter}$ 式遍历以 $x_i$ 为中心、半径为 $r(n)$ 的领域 $\mathcal{B}(n)$ 内的所有顶点 $x_{s_i+j}$，对每个顶点的光路贡献 $c_{s_i+j}$ 进行加权平均，得到 $\bar{c_i}$ 。其中 $n$ 为每个像素的光线总数，在每次迭代 1spp 的情况下（每次filter都会为像素采样一根光线），也可视为filter迭代次数。$\eqref{path-filter}$ 式的filter过程可以迭代执行，例如再由 $\bar{c_i}$ 计算 $\bar{\bar{c_i}}$，虽然高效，但光照细节被一定模糊，如下图
+其中 $ \mathcal{X}_{\mathcal{B}(n)}$ 为特征函数，在数学上也称为指示函数(indicator function)，这里意义为：位于球内为1；否则为0。 $\eqref{path-filter}$ 式遍历以 $x_i$ 为中心、半径为 $r(n)$ 的领域 $\mathcal{B}(n)$ 内的所有顶点 $x_{s_i+j}$，对每个顶点的光路贡献 $c_{s_i+j}$ 进行加权平均，得到 $\bar{c_i}$ 。其中 $n$ 为每个像素的光线总数，在每次迭代 1spp 的情况下（每次filter都会为像素采样一根光线），也可视为filter迭代次数。$\eqref{path-filter}$ 式的filter过程可以迭代执行，例如再由 $\bar{c_i}$ 计算 $\bar{\bar{c_i}}$，虽然高效，但光照细节被一定模糊，如下图
 
 <img src="/images/Paper Notes/Ray Tracing/Path Space Filtering.assets/image-20240418134159177.png" alt="image-20240418134159177" style="zoom: 80%;" />
 
