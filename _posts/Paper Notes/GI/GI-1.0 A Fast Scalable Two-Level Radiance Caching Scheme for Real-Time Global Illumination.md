@@ -296,13 +296,93 @@ queue中存储的是cache probe的索引，其数据存储在贴图中索引对�
 
 ## 2.2 World Cache
 
+world cache 维护了次级光路顶点的出射radiance（按照forward path tracing的方向来看），作者基于 [[5]](#[5]) 中的 hash cells 数据结构，提出新的 tiling 方法，该方法能够更高效地在相邻cells之间filter。
 
+### 2.2.1 Caching Outgoing Radiance for Secondary Path Vertices
+
+world cache通过对顶点描述的hash来寻址hash table中的radiance cell。寻址过程如下图所示，先使用一个fast hash定位bucket index；再使用另一个hash函数计算一个fingerprint，用于在bucket内 linear probing，确定cell的存储位置。作者选择了两个彼此之间几乎不会冲突的hash函数，即linear probing过程不会比较顶点描述，而是直接比较第二次hash生成fingerprint，忽略了第二次hash冲突的可能性。
+
+![image-20240426133627889](/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426133627889.png)
+
+作者构建的顶点描述包含：
+
+- 顶点坐标、光线方向：邻近顶点间的重用与filter
+- 层级：
+- 光线长度与cell_size的比较结果
+
+每个cell还会关联一个衰减值decay，用于管理cell entry的生命周期。在每次访问cell时都会重置decay，否则就会持续衰减，如果一个cell的decay到0，则释放cell entry。hash table的主要瓶颈来自于大量使用atomic，例如每次插入，这可以通过存储下来顶点的查找结果来避免。
+
+### 2.2.2 Eliminating Light Leaks
+
+在与周围顶点进行filter时，会存在light leaking异常效果，如下图所示情况。遮挡边缘的两个相邻顶点，离得近，同时secondary ray的方向接近评选，导致descriptor经过hash后落入同一cell。这种情况下，相邻顶点的filter会导致漏光
+
+<img src="/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426140012373.png" alt="image-20240426140012373" style="zoom: 80%;" />
+
+作者发现这类light leaking大部分出现在次级光线长度小于要查找cell大小的情况下，也就是光线没有离开cell。对于此，向descriptor中加入比较结果 (ray_length < cell_size)，可以避免这种情况发生。
+
+### 2.2.3 Prefiltering Radiance
+
+cell之间filter需要访问 3x3x3 相邻cell，但在hash space的开销非常大。作者提出 two-level 数据结构，其中 cell 被组织到 tile 内，bucket 中索引的是tile，cell由tile内的局部坐标来索引，如下图所示。
+
+![image-20240426145746727](/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426145746727.png)
+
+每个tille表示了场景固定大小的区域，相当于一个比较大的voxel，但tile中的cell在三维空间下是相对稀疏的，同时小范围的表面接近于二维平面，因此作者选择将cell投影到2D tile上的方式，将cell向最大outgoing方向的轴向投影。
+
+>  最大outgoing方向应该是值tile内所有cell的所有光线方向取最大
+>
+> tile 是一个超大的voxel，被hash table索引。cell是tile内连续的小voxel，按照局部位置连续排放。这也意味着tile需要更大的存储空间。对于 3x3x3 cells 的filter，如果没有这么多相邻cells呢？
+
+这种做法以不高的存储开销，使得tile之内相邻cell之间filter操作更加高效，但tile之间仍然无法解决，作者选择依赖于screen cache来掩盖这部分偏差。
+
+将方差降低到可接受的水平通常需要cell内几帧的累积。对于时序累积，第一层 mip level 使用 exponential moving average [[4]](#[4]) ，后续层级都是上一层级使用box filter。在实现中，作者选择 8x8 tile size，这样性能最佳。最终，通过查询第一层，累积radiance到screen cache。
+
+### 2.2.4 Evaluating Lighting at Secondary Path Vertices
+
+前面描述了如何在two-level hash数据结构中缓存和filter次级路径顶点的直接光照。但直接光照仍然需要计算。首先执行重投影，如果重投影成功则复用上一帧的光照；否则，需要计算顶点光照着色，这是 Light Sampling 小节的内容。
+
+对于重用的上一帧radiance样本，既包含了直接光照，又包含了间接光照。这种重用会为当前帧带来多一次间接路径，近似无限反弹，称为 temporal radiance feedback。
+
+> 但cell中的顶点只有直接光照，并没有间接光照。从PPT里看到，这里的重投影是在屏幕上执行的，即将顶点重投影到上一帧，看是否在屏幕上，在屏幕上则重投影成功，否则重投影失败。也就是world cache本身无法做到无限反弹，只有屏幕上看到的顶点具有无限反弹。
+>
+> 无限反弹过程：
+>
+> - 第一帧
+>   - screen probe光追得到hash cell顶点，hash cell计算一次反射点的直接光
+>   - screen probe从hash cell得到一次反射间接光
+>   - 计算屏幕的直接光照，从screen probe得到的一次反射间接光
+> - 第二帧
+>   - screen probe光追得到hash cell顶点
+>     - hash cell顶点重投影成功，得到其上一帧的直接光照与一次反射间接光。hash cell顶点作为一次反射点，意味着属于当前帧的一次反射间接光、二次反射间接光
+>     - hash cell顶点重投影失败，计算其直接光照，即一次反射间接光
+>   - screen probe从hash cell得到间接光，此时融合了二次反射间接光
+>   - 计算屏幕像素的直接光照，从screen probe采样间接光，这里采样得到的最多反射是二次反射
+> - 第三帧：最大三次反射
+>
+> 因此无限反弹只有部分cell顶点具有。
 
 ## 2.3 Light Sampling
+
+hit points 的着色
+
+### 2.3.1 Reservoir-based Resampling
+
+
+
+### 2.3.2 Light Grid Lookup Structure
 
 
 
 ## 2.4 Irradiance Estimation
+
+### 2.4.1 Per-Pixel Interpolation
+
+
+
+### 2.4.2 Spherical Harmonics
+
+
+
+### 2.4.3 Denoising
 
 
 
@@ -319,3 +399,5 @@ queue中存储的是cache probe的索引，其数据存储在贴图中索引对�
 <a name="[3]">[3]</a> Zina H. Cigolle, Sam Donow, Daniel Evangelakos, Michael Mara, Morgan McGuire, and Quirin Meyer. 2014. A Survey of Efficient Representations for Independent Unit Vectors. Journal of Computer Graphics Techniques (JCGT) 3, 2 (17 April 2014), 1–30. http://jcgt.org/published/0003/02/01/ 
 
 <a name="[4]">[4]</a> Brian Karis. 2014. HIGH-QUALITY TEMPORAL SUPERSAMPLING. http://advances.realtimerendering.com/s2014/#_HIGH-QUALITY_TEMPORAL_SUPERSAMPLING 
+
+<a name="[5]">[5]</a> Binder, N., Fricke, S., and Keller, A. 2021. Massively Parallel Path Space Filtering. 
