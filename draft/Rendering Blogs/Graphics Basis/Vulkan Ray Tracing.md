@@ -1,10 +1,10 @@
 ---
 typora-copy-images-to: ..\..\..\images\Rendering Blogs\Graphics Basis\${filename}.assets
 typora-root-url: ..\..\..\
-title: SlabHash
-keywords: Graphics, Interpolation
+title: Vulkan Raytracing
+keywords: Graphics, Raytracing
 categories:
-- [Rendering Blogs, Graphics, Interpolation]
+- [Rendering Blogs, Graphics]
 mathjax: true
 ---
 

@@ -52,7 +52,7 @@ $$
 
 ## 2.1 Resample Importance Sampling(RIS)
 
-由 $\eqref{MIS MC}$ 可以看出，MIS 是对着色项的线性组合的采样，而另一种可选的采样策略是对其中一些项的乘积进行近似成比例地采样，这就是 RIS 实现的策略。RIS 从 source PDF $p$ 中生成 $M\geq 1$ 个候选样本 $\boldsymbol{x}={x_1,\cdots,x_M}$，$p$ 选择次佳但易于采样地分布，如 $p \propto L_e $。然后从这个候选池中使用以下离散概率分布进行随机选取 $z\in\{1,\cdots,M\}$，
+由 $\eqref{MIS MC}$ 可以看出，MIS 是对着色项的线性组合的采样，而另一种可选的采样策略是对其中一些项的乘积进行近似成比例地采样。RIS 通过以下过程实现该采样策略：RIS 从 source PDF $p$ 中生成 $M\geq 1$ 个候选样本 $\boldsymbol{x}={x_1,\cdots,x_M}$，其中 $p$ 选择次佳但易于采样的分布，如 $p \propto L_e $。然后从这个候选池中使用以下离散概率分布进行随机选取 $z\in\{1,\cdots,M\}$，
 $$
 p(z\mid \boldsymbol{x})=\frac{\mathrm{w}(x_z)}{\sum^M_{i=1}\mathrm{w}(x_i)} \quad with \quad \mathrm{w}(x)=\frac{\hat{p}(x)}{p(x)} \tag{5}\label{discrete PDF}
 $$

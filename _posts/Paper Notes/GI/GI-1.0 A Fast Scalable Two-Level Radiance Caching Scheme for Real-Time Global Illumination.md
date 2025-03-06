@@ -34,7 +34,9 @@ screen cache 是基于screen probe的实现，本章节会介绍如何将screen 
 
 前面提到，screen probe 只能在屏幕像素上稀疏地生成。在本文提出的方法中，screen probe的生成分摊在多帧。先预设屏幕多大tile放置一个probe，每帧生成不同tile的probe，然后通过重投影复用历史帧的probe，最终几帧后达到覆盖屏幕的全部 tile，即 upscale 到全分辨率。upscale 系数决定了采样率，可以作为性能与质量的权衡。本文的实现中选择使用一个 probe 来编码一个大小为 $8\times 8$ 的 tile 的半球radiance信息，同时每个probe分辨率为 $8\times 8$。因此，这里可以将生成screen probe的tile大小定义为 $8\cdot (upscale\_x, upscale\_y)$ ，其中 $upscale\_x$、$upscale\_y$ 分别表示 X、Y 上的时序 upscale 量，越大意味着需要更多帧达到全分辨率。
 
-在为每个tile生成一个screen probe时，作者使用 Halton 低差异序列在 tile 内抖动选择一个像素作为生成位置。当 upscale 选择 $(2,2)$ 时，则需要4帧能够达到完全填充，即每个tile至少具有一个probe，如图 [Fig-2](#Fig-2) 所示。
+在为每个tile生成一个screen probe时，作者使用 Halton 低差异序列在 tile 内抖动选择一个像素作为生成位置。当 upscale 选择 $(2,2)$​ 时，则需要4帧能够达到完全填充，即每个tile至少具有一个probe，如图 [Fig-2](#Fig-2) 所示。
+
+> 这里的说法有点冲突。Halton序列应该是将spawn tile划分成立 upscale_x * upscale_y 份，每次在其中一份（probe grid/tile）中抖动生成一个probe
 
 <a name="Fig-2"></a>
 
@@ -374,17 +376,27 @@ hit points 的着色
 
 ## 2.4 Irradiance Estimation
 
+本小节使用probe数据评估屏幕像素的 irradiance。
+
 ### 2.4.1 Per-Pixel Interpolation
 
+使用像素周围的probe进行加权平均来重建像素光照。使用 2.1.5 小节定义的 `find_closest_probe` 函数查找四个方向上相邻probes，基于表面深度、normal的edge-aware function的权重设计。同样使用 cell_size 排除掉远离的probe，即赋予权重 0。
 
+对于周围4个probe权重都为0或很小的情况，使用均值代替。
+
+除此之外，在查找相邻probe之前，会先抖动像素位置，这样可以打破 structured artifact，但当抖动位置远离原像素所在平面时，则取消这次抖动。
 
 ### 2.4.2 Spherical Harmonics
 
+在评估irradiance时，通常需要提取所有附近的radiance样本。更好的方式是在插值之前，先将probe投影到SH，SH 具有以下优点：
 
+- 只使用前三阶可以过滤掉高频噪声
+- 能够以低存储开销较好地表示 irradiance
+- reprojection pass 可以只重投影 SH
 
 ### 2.4.3 Denoising
 
-
+自适应blur
 
 
 

@@ -48,6 +48,8 @@ $$
 
  <img src="/images/Rendering Blogs/Graphics Basis/Basic Radiometry.assets/image-20231114163033588.png" alt="image-20231114163033588" style="zoom: 50%;" />
 
+经常会遇到throughput说法，但throughput并不是物理量，只是对光线传播时所保持能量的描述。例如由光源发出的光线，经过一级反射会累积交点处的BSDF，在下一级光路传播时，该光线的throughput指的是其携带能量乘上BSDF。可以理解为 scaled radiance。而辐射通量则是某点对到达该点的光线的throughput * 该点的BSDF的积分。
+
 #### 3. Angle
 
 圆上的弧长与半径的比值: $\theta=\frac{l}{r}$ ，圆有 $2\pi$ 弧度

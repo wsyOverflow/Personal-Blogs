@@ -370,7 +370,24 @@ $$
 
   > 注意，如果只取结果xyz分量，最后一个分量乘不乘没有影响，因为 w 分量除了规范化三维坐标没有其他作用，不乘也只是最后得到的 w 分量不是 1 而已
 
-  
+
+## 4.3 像素抖动偏移
+
+$$
+\begin{align}
+M_{persp}\cdot (x,y,z,1)^T &=\begin{pmatrix}
+\frac{1}{aspect\cdot \tan\frac{fov}{2}} & 0 & jitter_x & 0 \\
+0 & \frac{1}{\tan\frac{fov}{2}} & jitter_y & 0 \\
+0 & 0 & \frac{f}{n-f} & \frac{nf}{n-f} \\
+0 & 0 & -1 & 0
+\end{pmatrix} \cdot (x,y,z,1)^T \\
+&=\left(\frac{x}{aspect\cdot \tan\frac{fov}{2}} + z\cdot jitter_x, \frac{y}{\tan\frac{fov}{2}}+z\cdot jitter_y, \frac{f\cdot z + nf}{n-f}, -z\right)^T
+\end{align}
+$$
+
+最后除w得到clip pos，则得到 clip.x 与 clip.y 的偏移量为 $(-jitter_x, -jitter_y)$，因此像素内的抖动值取值范围是 [-1, 1] / resolution
+
+
 
 # 5 任意z处的投影
 
