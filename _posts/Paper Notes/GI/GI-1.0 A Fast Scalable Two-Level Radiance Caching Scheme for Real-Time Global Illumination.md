@@ -1,7 +1,7 @@
 ---
 typora-copy-images-to: ..\..\..\images\Paper Notes\GI\${filename}.assets
 typora-root-url: ..\..\..\
-title: GI-1.0: A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination
+title: GI-1.0 - A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination
 categories:
 - [Paper Notes, GI, Light Probe]
 mathjax: true

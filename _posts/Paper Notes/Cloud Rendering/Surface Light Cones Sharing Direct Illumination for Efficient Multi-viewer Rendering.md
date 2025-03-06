@@ -1,7 +1,7 @@
 ---
 typora-copy-images-to: ..\..\..\images\Paper Notes\Cloud Rendering\${filename}.assets
 typora-root-url: ..\..\..\
-title: Surface Light Cones: Sharing Direct Illumination for Efficient Multi-viewer Rendering
+title: Surface Light Cones - Sharing Direct Illumination for Efficient Multi-viewer Rendering
 keywords: direct light, cloud rendering
 categories:
 - [Paper Notes, Cloud Rendering]

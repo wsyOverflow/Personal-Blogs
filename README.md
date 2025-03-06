@@ -25,10 +25,12 @@ hexo个人博客配置主要参考了 [使用 Hexo 搭建个人博客](https://k
 
 hexo 根目录下`_config.yml`文件的相关配置：
 
-- hexo发布会清除本仓库文件，为了保留readme。设置`skip_render`跳过 README.md 文件
+- hexo发布会清除本仓库文件，为了保留readme。设置`skip_render`跳过 README.md 文件。以及忽略掉 draf
   ```yaml
   skip_render:
     - README.md
+    - draft/**/*
+    - images/draft/**/*
   ```
 
 markdown编辑器采用typora，直接在 `source/_posts` 目录写markdown博客，图片根目录为 `source/images`。
