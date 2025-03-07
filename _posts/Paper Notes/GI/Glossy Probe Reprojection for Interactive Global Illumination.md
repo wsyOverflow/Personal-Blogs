@@ -155,7 +155,7 @@ glossy 光线路径的全局光照渲染概要：
 当相机由 $\mathbf{p}$​​​ 移动到 $\mathbf{p'}$​​​ 时，作者基于 specular path perturbation 理论来确定 $\mathbf{x}$​​​ 移动到的位置 $\mathbf{x'}$​​​。这样的移动描述的其实是镜面反射路径$\mathcal{S}_1$​​​($p\rightarrow x\rightarrow q$​​​) 到 $\mathcal{S}_2$​​​($p'\rightarrow x'\rightarrow q$​​​​) 的 specular motion。其中反射路径 $\mathcal{S}_1$​​​​ 在 G-buffer 光栅化后已经确定，那么只有 $\mathbf{x'}$​​​ 是未知的。
 
 - [ ] 基于 specular path perturbation [[5]](#[5]) 理论，此时问题转化为：已知 $\Delta p=p'-p$​​，近似 $\Delta x=x-x'$​​，从而得到 $x'=x+\Delta x$​​.
-  							                $$
+  							               $$
   \Delta x=J\Delta p+[\Delta p]^TH[\Delta p]
   $$
   其中，$J(p,q,x,f)$​​ 是一个 3X3 Jacobian 矩阵，$H(p,q,x,f)$​​ 是一个 3x3x3 tensor，$[\Delta p]$​​ 是重复 $\Delta p$​​ 三次的  1x1x3 tensor。由于 specular path perturbation 需要使用到 $f$​​ 的一阶、二阶、三阶导数，这里就使用到了预计算中近似的抛物面。
@@ -285,7 +285,7 @@ $$
 - [ ] 需要理解 [[3]](#[3]) 的数学原理，描述下面过程的细节
 - [ ] 对于每个顶点，使用 [[4]](#[4]) 技术估计其主曲率与对应方向 [Fig 1.3(a)](#Fig 1.3)。该步骤在每个物体上分别进行，并且为了更好的结果，对较大表面，先进行细分 [Fig 1.3(b d)](#Fig 1.3)。
 - [ ] 基于 specular path perturbation [[5]](#[5]) 理论，此时问题转化为：已知 $\Delta p=p'-p$，近似 $\Delta x=x-x'$，从而得到 $x'=x+\Delta x$.
-  	                      $$
+  	                     $$
   \Delta x=J\Delta p+[\Delta p]^TH[\Delta p]
   $$
   其中，$J(p,q,x,f)$ 是一个 3X3 Jacobian 矩阵，$H(p,q,x,f)$ 是一个 3x3x3 tensor，$[\Delta p]$ 是重复 $\Delta p$ 三次的  1x1x3 tensor。由于 specular path perturbation 需要使用到 $f$​​ 的一阶、二阶、三阶导数，这里就使用到了预计算中近似的抛物面。

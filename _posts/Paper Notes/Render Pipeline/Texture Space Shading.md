@@ -22,7 +22,7 @@ mathjax: true
 
 本文按照 [[1]](#[1]) 给出的分类方法描述TSS的相关工作，以及设想中的大致实现思路。
 
-![image-20230628191733254](/images/Paper Notes/Render Pipeline/Texture Space Shading.assets/image-20230628191733254.png)
+<img src="/images/Paper Notes/Render Pipeline/Texture Space Shading.assets/image-20230628191733254.png" alt="image-20230628191733254" style="zoom:80%;" />
 
 
 

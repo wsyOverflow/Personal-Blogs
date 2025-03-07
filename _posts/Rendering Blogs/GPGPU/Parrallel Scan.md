@@ -1,7 +1,7 @@
 ---
 typora-copy-images-to: ..\..\..\images\Rendering Blogs\GPGPU\${filename}.assets
 typora-root-url: ..\..\..\
-title: SlabHash
+title: Parallel Scan
 keywords: GPGPU, Coherent
 categories:
 - [Rendering Blogs, GPGPU, Scan]

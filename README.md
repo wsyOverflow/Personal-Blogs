@@ -88,6 +88,6 @@ hexo deploy -m "commit message"
 
 # 6 图片问题
 
-本文档采用的是绝对路径形式的图片路径，理论上网页上图片 url 应该是 /images/path/to/file
+本文档采用的是绝对路径形式的图片路径，理论上网页上图片 url 应该是 /images/path/to/file。有时候刷新或者换个浏览器会好
 
 如果以上配置都正确，但图片url就是不对，那就新起目录重新配置

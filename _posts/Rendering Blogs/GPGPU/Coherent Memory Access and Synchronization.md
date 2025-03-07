@@ -1,7 +1,7 @@
 ---
 typora-copy-images-to: ..\..\..\images\Rendering Blogs\GPGPU\${filename}.assets
 typora-root-url: ..\..\..\
-title: SlabHash
+title: Coherent Memory Access and Synchronization
 keywords: GPGPU, Coherent
 categories:
 - [Rendering Blogs, GPGPU, Synchronization]
@@ -34,7 +34,7 @@ GPU 具有非常多的处理器核心，在 Nvidia 中称为 Streaming Multiproc
 
 下面来自 [[4]](#[4]) 的图 Fig-1 为GPU示意图，Fig-2为其中单个SM示意图。
 
-![image-20231024143243815](/images/Rendering Blogs/GPGPU/Coherent Memory Access.assets/image-20231024143243815.png)
+<img src="/images/Rendering Blogs/GPGPU/Coherent Memory Access.assets/image-20231024143243815.png" alt="image-20231024143243815" style="zoom:90%;" />
 
 <center>Fig-1 GPU 整体的结构图</center>
 

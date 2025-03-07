@@ -63,7 +63,7 @@ mathjax: true
 
 <a name="Fig-3.1"></a>
 
-![image-20241207155709420](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207155709420.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207155709420.png" alt="image-20241207155709420" style="zoom:80%;" />
 
 <center>Fig-3.1 左图：两种类型cache之间交互以及与环境、光照的交互；右图：cache的spatial filter，只能在位于同一island的caches之间执行</center>
 
@@ -71,7 +71,7 @@ mathjax: true
 
 <a name="Fig-3.2"></a>
 
-![image-20241207164153230](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207164153230.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207164153230.png" alt="image-20241207164153230" style="zoom:80%;" />
 
 <center>Fig-3.2 Primary radiance cache 的可视化。(a) 每个方形是一个 8x8 texels 的cache entry，存储incoming radiance；(b) 展示了hit distance，用于 detail-preserving filtering。</center>
 
@@ -87,13 +87,13 @@ primary cache entry 会为每个VB样本执行，确保覆盖所有可见表面�
 
 <a name="Fig-3.3"></a>
 
-![image-20241207171925197](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207171925197.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207171925197.png" alt="image-20241207171925197" style="zoom:80%;" />
 
 <center>Fig-3.3 (a) 场景几何的实际triangle ID；(b) 方形表示了表面上的一个cache entry；(c) 2x2 下的triangle ID cache entry的三角形编号；(d) 4x4 下更精细的编号</center>
 
 <a name="Fig-3.4"></a>
 
-![image-20241207171132639](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207171132639.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207171132639.png" alt="image-20241207171132639" style="zoom:80%;" />
 
 <center>Fig-3.4 (a) Black artifacts，由triangle ID对于cache表面的覆盖不充足，导致从cache到world的转换得到光线起点的过程匹配到相邻世界坐标；(b) 更精细的triangle ID可以明显缓解该问题</center>
 
@@ -107,7 +107,7 @@ secondary cache 缓存了半球面的outgoing radiance，能够采样任意方�
 
 <a name="Fig-3.5"></a>
 
-![image-20241207180126279](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207180126279.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241207180126279.png" alt="image-20241207180126279" style="zoom:80%;" />
 
 <center>Fig-3.5 secondary radiance cache 的可视化。每个方形表示一个8x8 texels的cache entry，其中存放了outgoing radiance。secondary cache是紧密附着在表面上的，可以避免漏光。(a) 没有temporal filtering，比较噪；(b) filter后更平滑</center>
 
@@ -140,13 +140,13 @@ island 边界问题，位于不同的island的邻居无法被访问，这会导�
 
 <a name="Fig-3.7"></a>
 
-![image-20241209110506190](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209110506190.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209110506190.png" alt="image-20241209110506190" style="zoom:80%;" />
 
 <center>Fig-3.7 Sponza 场景窗帘被间接光照照亮。(a) filter过程中，为相邻cache entriy使用相同方向，导致细节丢失以及过渡平坦。(b) 使用视差矫正方向保留了光照特征。</center>
 
 <a name="Fig-3.8"></a>
 
-![image-20241209111702863](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209111702863.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209111702863.png" alt="image-20241209111702863" style="zoom:80%;" />
 
 <center>Fig-3.8 由于spatial filter无法跨island边界，导致明显的缝隙。相接、平坦或者曲率很低的表面应该位于一个island上，来避免island边界的缝隙问题。最左边两张图中，被划分了多个不同的island，导致明显的缝隙；有时这些边界可能被surface texture隐藏，例如最右边两张图中</center>
 
@@ -156,7 +156,7 @@ island 边界问题，位于不同的island的邻居无法被访问，这会导�
 
 <a name="Fig-3.9"></a>
 
-![image-20241209113157530](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209113157530.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209113157530.png" alt="image-20241209113157530" style="zoom:80%;" />
 
 <center>Fig-3.9 除窗帘外，roughness 设置为 0.4。(a)~(c) 是没有TAA或者其它filter，对primary hit cache的不同spp下的BRDF重要性采样。时间与每个VB像素采样primary cache相关；(d) 8spp下以及简单temporal filter的TAA；(e) path-traced reference，五次bounce累积40K帧。本文的方法成功捕捉了glossy反射。然而，与参考图像相比，某些高光未能完全重现，作者认为这与filter过程以及cache分辨率可能不足有关。</center>
 
@@ -176,20 +176,20 @@ island 边界问题，位于不同的island的邻居无法被访问，这会导�
 
 <a name="Fig-3.10"></a>
 
-![image-20241209132939923](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209132939923.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209132939923.png" alt="image-20241209132939923" style="zoom:80%;" />
 
 <center>Fig-3.10 重要性采样primary cache、path-traced reference与AMD-GI1.1之间的对比。尽管secondary cache entry覆盖的区域要大得多，但它们为primary cache生成了令人满意的光滑反射，接近路径追踪的参考结果。对primary cache进行重要性采样更适合处理较大物体的反射，并且粗糙度的最低值大约为 0.2。
 </center>
 
 <a name="Fig-3.11"></a>
 
-![image-20241209133723897](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209133723897.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209133723897.png" alt="image-20241209133723897" style="zoom:80%;" />
 
 <center>Fig-3.11 在VB的ray-traced反射中，secondary cache为反射光线提供radiance，消除了进一步光线投射的昂贵开销。左图，具有近似镜面反射的地板；secondary cache覆盖范围广，偶尔会出现在反射中。由于缓存分辨率较低，表面细节（如黄色便签上的画）受到影响。右图，粗糙度为 0.1，场景显得更平滑，使得secondary cache变得更难以辨认。</center>
 
 <a name="Fig-3.12"></a>
 
-![image-20241209134052245](/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209134052245.png)
+<img src="/images/Paper Notes/Cloud Rendering/Radiance Caching with On-Surface Caches for Real-Time Global Illumination.assets/image-20241209134052245.png" alt="image-20241209134052245" style="zoom:80%;" />
 
 <center>Fig-3.12 secondary cache 能够为 ray-traced reflections 提供无限反弹。左图没有无限反弹；中间使用secondary cache达到的无限反弹；右图是AMD-GI1.1的效果，无法提供屏幕外的无限反弹</center>
 

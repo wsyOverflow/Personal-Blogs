@@ -1,7 +1,7 @@
 ---
 typora-copy-images-to: ..\..\..\images\Rendering Blogs\Graphics Basis\${filename}.assets
 typora-root-url: ..\..\..\
-title: SlabHash
+title: Basic Radiometry
 keywords: Graphics, Radiometry
 categories:
 - [Rendering Blogs, Graphics, Radiometry]

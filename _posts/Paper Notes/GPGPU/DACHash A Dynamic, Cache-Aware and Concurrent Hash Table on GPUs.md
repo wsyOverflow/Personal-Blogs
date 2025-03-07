@@ -125,7 +125,7 @@ SlabHash[[2]](#[2]) 提出了wrap内的 work-sharing 策略来提高coalesced me
 - warp再处理key 3、key 7，遇到了同样的问题。同时，随着bucket 3与bucket 7的super node的加载，key 0的数据很可能从cache中被逐出。
 - warp处理key 8，bucket 0的第一个super node再次被加载，降低了cache命中率。
 
-![image-20231015170725329](/images/Paper Notes/GPGPU/DACHash A Dynamic, Cache-Aware and Concurrent Hash Table on GPUs.assets/image-20231015170725329.png)
+<img src="/images/Paper Notes/GPGPU/DACHash A Dynamic, Cache-Aware and Concurrent Hash Table on GPUs.assets/image-20231015170725329.png" alt="image-20231015170725329" style="zoom:80%;" />
 
 为了提高链表遍历过程中的cache命中率，作者提出对keys的reorder算法，将相同hash value的keys组织在一起。这一步是将super node的内存区进行划分，通过reorder算法，使得相同hash value的key的super node在物理上也相邻。
 

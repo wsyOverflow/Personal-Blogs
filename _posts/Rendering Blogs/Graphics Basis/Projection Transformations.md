@@ -1,7 +1,7 @@
 ---
 typora-copy-images-to: ..\..\..\images\Rendering Blogs\Graphics Basis\${filename}.assets
 typora-root-url: ..\..\..\
-title: SlabHash
+title: Projection Transformations
 keywords: Graphics, Projection
 categories:
 - [Rendering Blogs, Graphics, Projection]

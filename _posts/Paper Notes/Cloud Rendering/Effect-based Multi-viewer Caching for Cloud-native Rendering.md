@@ -20,10 +20,8 @@ mathjax: true
 
 管线设计如图 [Fig-1](#Fig-1)，首先为每个viewer执行visibility pass来决定那些cache entries会被使用到；然后对所有viewers的cache request进行整合更新，这一步可以执行在不同的GPU上；之后viewers再通过采样cache来着色帧；最后是后处理，将生成的图像插入到output stream。
 
-
-
 <a name="Fig-1"></a>
-![image-20230703130901243](/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230703130901243.png)
+<img src="/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230703130901243.png" alt="image-20230703130901243" style="zoom:90%;" />
 
 <center>Fig-1 Cloud Native Rendering Pipeline</center>
 
@@ -54,7 +52,7 @@ OSC pipeline主要由如图[Fig-2](#[Fig-2])中的五个阶段组成：
 
 <a name="Fig-2"></a>
 
-![image-20230704143603816](/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230704143603816.png)
+<img src="/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230704143603816.png" alt="image-20230704143603816" style="zoom:90%;" />
 
 <center>Fig-2 OSC Pipeline</center>
 
@@ -215,7 +213,7 @@ AO缓存在OSC，具有时序累积过程。每个texel共 4 Bytes：记录16-bi
 
 在分布式云渲染下，viewer GPUs发送cache request(V-buffer)到每个effect GPU，待effect GPU更新完effect cache后，再由 viewer GPUs 合成最终画面。
 
-<img src="/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230925161736654.png" alt="image-20230925161736654" style="zoom: 67%;" />
+<img src="/images/Paper Notes/Cloud Rendering/Effect-based Multi-viewer Caching for Cloud-native Rendering.assets/image-20230925161736654.png" alt="image-20230925161736654" style="zoom: 80%;" />
 
 # 4 Evaluation
 

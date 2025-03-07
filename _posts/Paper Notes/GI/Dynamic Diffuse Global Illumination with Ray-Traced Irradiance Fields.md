@@ -87,8 +87,8 @@ $$
 
 <a name="Fig 4.1"></a>
 
-![image-20230226115136810](/images/Paper Notes/GI/Dynamic%20Diffuse%20Global%20Illumination%20with%20Ray-Traced%20Irradiance%20Fields.assets/image-20230226115136810.png)
-![image-20230226115205828](/images/Paper Notes/GI/Dynamic%20Diffuse%20Global%20Illumination%20with%20Ray-Traced%20Irradiance%20Fields.assets/image-20230226115205828.png)
+<img src="/images/Paper Notes/GI/Dynamic%20Diffuse%20Global%20Illumination%20with%20Ray-Traced%20Irradiance%20Fields.assets/image-20230226115136810.png" alt="image-20230226115136810" style="zoom:80%;" />
+<img src="/images/Paper Notes/GI/Dynamic%20Diffuse%20Global%20Illumination%20with%20Ray-Traced%20Irradiance%20Fields.assets/image-20230226115205828.png" alt="image-20230226115205828" style="zoom:80%;" />
 
 <center>图 4.1 第一列只有直接光照，第二列有完整的全局光照</center>
 

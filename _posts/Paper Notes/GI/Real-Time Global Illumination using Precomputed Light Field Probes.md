@@ -158,7 +158,7 @@ probe的光线求交：首先计算出光线在oc-map投影的几组端点；然
 
 <a name="Fig 4.3"></a>
 
-<img src="/images/Paper Notes/GI/Real-Time%20Global%20Illumination%20using%20Precomputed%20Light%20Field%20Probes.assets/image-20230214233524659.png" alt="image-20230214233524659"  />
+<img src="/images/Paper Notes/GI/Real-Time%20Global%20Illumination%20using%20Precomputed%20Light%20Field%20Probes.assets/image-20230214233524659.png" alt="image-20230214233524659" style="zoom:80%;" />
 
 <center>图4.3 传统irradiance map的漏光缺陷，文中提出的irradiance map解决后的效果</center>
 

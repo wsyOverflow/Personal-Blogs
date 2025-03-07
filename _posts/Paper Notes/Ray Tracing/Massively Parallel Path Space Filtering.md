@@ -123,7 +123,7 @@ $\eqref{voxel-filter}$ 式中的近似很大程度取决于 $L_i$ 在 $x'$ 与 $
 
 <img src="/images/Paper Notes/Ray Tracing/Massively Parallel Path Space Filtering.assets/image-20240423132711540.png" alt="image-20240423132711540" style="zoom:67%;" />
 
-![image-20240423132737345](/images/Paper Notes/Ray Tracing/Massively Parallel Path Space Filtering.assets/image-20240423132737345.png)
+<img src="/images/Paper Notes/Ray Tracing/Massively Parallel Path Space Filtering.assets/image-20240423132737345.png" alt="image-20240423132737345" style="zoom:80%;" />
 
 <center>voxel filer的二维示意图：(a) 是带噪声的输入；(b) 是为每个vertex执行path space filter的结果；(c) 是每个voxel内执行filter，得到block artifact；(d)在voxel filter之前增加额外的抖动</center>
 

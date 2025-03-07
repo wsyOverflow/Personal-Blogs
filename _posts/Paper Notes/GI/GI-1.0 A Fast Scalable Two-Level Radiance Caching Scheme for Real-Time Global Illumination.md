@@ -161,7 +161,7 @@ probe是放置在 8x8 screen tiles内的任意一个像素上，因此使用 32-
 
 <a name="Fig-7"></a>
 
-![image-20240415151024688](/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240415151024688.png)
+<img src="/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240415151024688.png" alt="image-20240415151024688" style="zoom:110%;" />
 
 <center>Fig-7: sentinel 被标记为红色。</center>
 
@@ -304,7 +304,7 @@ world cache 维护了次级光路顶点的出射radiance（按照forward path tr
 
 world cache通过对顶点描述的hash来寻址hash table中的radiance cell。寻址过程如下图所示，先使用一个fast hash定位bucket index；再使用另一个hash函数计算一个fingerprint，用于在bucket内 linear probing，确定cell的存储位置。作者选择了两个彼此之间几乎不会冲突的hash函数，即linear probing过程不会比较顶点描述，而是直接比较第二次hash生成fingerprint，忽略了第二次hash冲突的可能性。
 
-![image-20240426133627889](/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426133627889.png)
+<img src="/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426133627889.png" alt="image-20240426133627889" style="zoom:110%;" />
 
 作者构建的顶点描述包含：
 
@@ -326,7 +326,7 @@ world cache通过对顶点描述的hash来寻址hash table中的radiance cell。
 
 cell之间filter需要访问 3x3x3 相邻cell，但在hash space的开销非常大。作者提出 two-level 数据结构，其中 cell 被组织到 tile 内，bucket 中索引的是tile，cell由tile内的局部坐标来索引，如下图所示。
 
-![image-20240426145746727](/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426145746727.png)
+<img src="/images/Paper Notes/GI/GI-1.0 A Fast Scalable Two-Level Radiance Caching Scheme for Real-Time Global Illumination.assets/image-20240426145746727.png" alt="image-20240426145746727" style="zoom:110%;" />
 
 每个tille表示了场景固定大小的区域，相当于一个比较大的voxel，但tile中的cell在三维空间下是相对稀疏的，同时小范围的表面接近于二维平面，因此作者选择将cell投影到2D tile上的方式，将cell向最大outgoing方向的轴向投影。
 

@@ -27,7 +27,7 @@ mathjax: true
 
 Surface Light Cone 方法实现在 [[2]](#[2]) 提出的 effect-cache 系统中，位于 cache update stage，如下图所示。一个统一的更新为每个surface point执行，以构建cones。在最终着色阶段，从cones中采样并进行着色，与其它effect组合得到最终着色结果。
 
-![image-20240408144341361](/images/Paper Notes/Cloud Rendering/Surface Light Cones Sharing Direct Illumination for Efficient Multi-viewer Rendering.assets/image-20240408144341361.png)
+<img src="/images/Paper Notes/Cloud Rendering/Surface Light Cones Sharing Direct Illumination for Efficient Multi-viewer Rendering.assets/image-20240408144341361.png" alt="image-20240408144341361" style="zoom:90%;" />
 
 ## 2.1 DI Gathering and Cone Construction
 
@@ -71,7 +71,7 @@ $$
 $$
 其中 $\alpha$ 是cone开口角度，$D$ 是cone方向，$s$ 是样本方向。最终 $\alpha$ 收缩了 $\delta$ ，而 cone 向远离 $s$ 的方向旋转了 $\delta/2$ 。
 
-<img src="/images/Paper Notes/Cloud Rendering/Surface Light Cones Sharing Direct Illumination for Efficient Multi-viewer Rendering.assets/image-20240408165535845.png" alt="image-20240408165535845"  />
+<img src="/images/Paper Notes/Cloud Rendering/Surface Light Cones Sharing Direct Illumination for Efficient Multi-viewer Rendering.assets/image-20240408165535845.png" alt="image-20240408165535845" style="zoom:110%;" />
 
 ## 2.2 Shading
 

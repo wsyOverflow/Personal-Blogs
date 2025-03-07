@@ -10,7 +10,7 @@ mathjax: true
 
 # 1 Life of triangle [[1]](#[1])
 
-![NVIDIA's logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline.png)
+<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline.png" alt="NVIDIA's logical pipeline" style="zoom:150%;" />
 
 ## 1.1 GPUs are super parallel work distributors
 
@@ -24,7 +24,7 @@ mathjax: true
 
 ## 1.2 GPU architecture
 
-![GPU architecture](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_maxwell_gpu.png)
+<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_maxwell_gpu.png" alt="GPU architecture" style="zoom: 90%;" />
 
 由于 Fermi 架构的 NVIDIA GPU 拥有相似的基本架构设计，其中核心部分是一个管理所有任务的 **Giga Thread Engine**。GPU 被划分为多个 **GPC（Graphics Processing Cluster，图形处理簇）**，每个 GPC 包含多个 **SM（Streaming Multiprocessor，流式多处理器）** 和一个 **Raster Engine（光栅引擎）**。在这些组件之间有大量的互联结构，其中最为重要的是 **Crossbar（交叉开关）**，它允许任务在 GPC 或其他功能单元（例如 **ROP（Render Output Unit，渲染输出单元）** 子系统）之间迁移。
 
@@ -34,7 +34,7 @@ GPU 上这些单元的具体数量（例如每个 GPC 包含多少个 SM，每�
 
 ## 1.3 The logical pipeline
 
-![The logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_begin.png)
+<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_begin.png" alt="The logical pipeline" style="zoom:80%;" />
 
 为简化起见，省略了一些细节。我们假设 drawcall 引用了一些已经填充好数据的 index- and vertex-buffer，这些缓冲区存储在 GPU 的 DRAM 中，并且仅使用 VS 和 PS：
 
@@ -44,7 +44,7 @@ GPU 上这些单元的具体数量（例如每个 GPC 包含多少个 SM，每�
 
 3. 接着，工作分发开始于 **Primitive Distributor（图元分发器）**，通过处理 index buffer 中的索引数据生成三角形工作批次，并将其分发到多个 **GPC**。
 
-   ![The logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_sm.png)
+   <img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_sm.png" alt="The logical pipeline" style="zoom:90%;" />
 
 4. 在 **GPC（图形处理簇）** 内，一个 **SM（流式多处理器）** 的 **Poly Morph Engine（多边形形变引擎）** 负责从三角形索引中提取顶点数据（即Vertex Fetch）
 
@@ -63,11 +63,11 @@ GPU 上这些单元的具体数量（例如每个 GPC 包含多少个 SM，每�
 
 8. 由于某些指令（特别是内存加载）需要更长的时间来完成，**Warp 调度器** 会切换到其他不需要等待内存的 Warp。这正是 **GPU** 克服内存读取延迟的关键机制：通过切换warp，隐藏延迟并减少等待时间。为了实现快速切换，调度器管理的所有线程在 **寄存器文件（register file）** 中拥有各自独立的寄存器。如果某个着色器程序需要的寄存器较多，那么可容纳的线程/Warps 就会减少。这意味着可供切换的 Warp 也减少，从而在等待指令完成（尤其是内存加载）期间，可执行的有效工作量也会减少。这种**寄存器资源的限制**可能会导致效率下降。
 
-   ![The logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_memoryflow.png)
+   <img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_memoryflow.png" alt="The logical pipeline" style="zoom:90%;" />
 
 9. 当 **Warp** 完成所有顶点着色器的指令后，其结果将由 **视口变换** 进行处理。随后，三角形将在 clip space volume 内进行裁剪，准备进入光栅化阶段。 在这一过程中，我们使用 **L1 缓存** 和 **L2 缓存** 来存储并管理各个任务之间通信的数据。
 
-   ![The logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_raster.png)
+   <img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_raster.png" alt="The logical pipeline" style="zoom:90%;" />
 
 10. 现在到了令人兴奋的部分，我们的三角形即将被分解，并可能会离开当前所在的 **GPC（图形处理簇）**。三角形的 **bounding box** 被用来决定哪些**光栅引擎（raster engines）**需要对其进行处理，因为每个光栅引擎负责屏幕上的多个 **tile（瓦片）**。 随后，三角形通过 **Work Distribution Crossbar** 被发送到一个或多个 GPC。此时，我们有效地将三角形分解成许多更小的任务进行处理。
 
@@ -97,7 +97,7 @@ GPU 上这些单元的具体数量（例如每个 GPC 包含多少个 SM，每�
 
 在下面的图片中，您可以看到一个 CAD 模型的渲染结果，其中不同的颜色表示了对图像贡献的不同 **SM（流式多处理器）** 或 **Warp ID**。需要注意，这种结果通常是帧间不一致的（**Frame-Coherent**），因为工作分配会在每一帧之间有所变化。这幅场景使用了许多 **Draw Calls** 渲染完成，其中一些可能是并行处理的（通过 **NSIGHT** 工具可以观察到这种 **Draw Call** 的并行性）。
 
-![The logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_distribution.png)
+<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_distribution.png" alt="The logical pipeline" style="zoom:80%;" />
 
 # 2 The Peak-Performance-Percentage Analysis Method for Optimizing Any GPU Workload
 
@@ -105,7 +105,7 @@ GPU 上这些单元的具体数量（例如每个 GPC 包含多少个 SM，每�
 
 这篇博客介绍基于硬件指标 (hardware metrics) 的性能分析方法，帮助我们了解整个GPU的使用情况，哪些硬件单元或子单元限制了性能，以及它们的运行效率多大程度接近各自的最大吞吐量 (maximum throughput，也成为 Speed of Light **SOL**)。假设应用程序没有使用异步计算或异步复制队列，那么这种硬件为中心的信息可以映射回图形 API 和着色器的操作，进而为提升任何给定工作负载的 GPU 性能提供指导，如图 1 所示： 
 
-<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/pasted-image-0-8-1024x246.png" alt="GPU performance data flow" style="zoom: 80%;" />
+<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/pasted-image-0-8-1024x246.png" alt="GPU performance data flow" style="zoom: 90%;" />
 
 
 
