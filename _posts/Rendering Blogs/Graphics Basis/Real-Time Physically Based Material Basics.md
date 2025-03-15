@@ -199,22 +199,20 @@ NDF(Normal Distribution Function) 为微表面法线分布函数，描述微观�
 
 ### 3.1 Lambertian Diffuse BRDF
 
-Lambertian 模型将漫发射理解为：光交于 diffuse 表面发生折射，在物体表面下进行了充足的散射后离开表面，向每个方向均匀反射，因此 Lambertian Diffuse BRDF 是一个常数。假设该常数为 $\mathcal{C}$，下面根据能量守恒推算出 $\mathcal{C}$。我们先来介绍 Lambert's Consine Law。
-
-#### 3.1.1 Lambert's Cosine Law
-
-对于以一定角度入射的 irradiance，物体接受到的 irradiance 与角度余弦成正比，该角度为入射方向与法线的夹角。详情查看 [[4]](#[4]) 的 Irradiance(辐照度)部分。
-
-#### 3.1.2 能量守恒计算 Lambertian Diffuse BRDF
-
-假设空间中任何方向入射的光 radiance 都一样，即 unifom incident lighting。如果物体不吸收光，根据能量守恒，入射 irradiance 等于出射 irradiance。假设入射方向 $\omega_i$ 的入射 irradiance 为 $L_i(\omega_i)$，入射角为 $\theta_i$，那么在 $\omega_o$ 出射方向上的出射 irradiance 为， 
+Lambertian 模型将漫发射理解为：光交于 diffuse 表面发生折射，在物体表面下进行了充足的散射后离开表面，向每个方向均匀反射，因此 Lambertian Diffuse BRDF 是一个常数。假设该常数为 $\mathcal{C}$，渲染方程如下
 $$
-L_o(\omega_o)=\int_{\Omega^+} \mathcal{C}\cdot L_i(\omega_i)\cdot \cos\theta_i\space d\omega_i
+L_o(\omega_o)=\int_{\Omega^+} \mathcal{C}\cdot L_i(\omega_i)\cdot \cos\theta_i\space d\omega_i=\mathcal{C}\cdot\int_{\Omega^+}  L_i(\omega_i)\cdot \cos\theta_i\space d\omega_i
 $$
-由于是 uniform incident lighting，因此入射 irradiance 是常数，上式可变为，
+
+#### 3.1.1 能量守恒计算 Lambertian Diffuse BRDF
+
+给定一些预设条件，可以根据能量守恒推算出 $\mathcal{C}$。
+
+假设空间中任何方向入射的光 radiance 都一样，即 unifom incident lighting。同时假设物体不吸收光，即入射与出射能量守恒。由于是 uniform incident lighting，因此每个入射方向上的 radiance 是常数，上式可变为，
 $$
 \begin{align}
-L_o(\omega_o)&=\mathcal{C}\cdot L_i\cdot\int_{\Omega^+}\cos\theta_i\space d\omega_i \\
+L_o(\omega_o)&=\int_{\Omega^+} \mathcal{C}\cdot L_i(\omega_i)\cdot \cos\theta_i\space d\omega_i \\
+&= \mathcal{C}\cdot L_i\cdot\int_{\Omega^+}\cos\theta_i\space d\omega_i \\
 &= \mathcal{C}\cdot L_i\cdot\int_0^{2\pi}\int_0^{\pi/2}\cos\theta_i\sin\theta_i\space d\theta_id\phi_i \\
 &= \mathcal{C}\cdot L_i\cdot\pi
 \end{align}
@@ -224,7 +222,7 @@ $$
 \mathcal{C}=\frac{1}{\pi}
 $$
 
-#### 3.1.3 具有能量损失的 diffuse 材质
+#### 3.1.2 具有能量损失的 diffuse 材质
 
 上述为了计算出 diffuse brdf 假定了无能量损失，但大多数材质会有能量吸收，只有部分能量反射出。反射能量的多少即为反射率，听起来像是前述 [Fresnel](#Fresnel) 的功能，但并非如此。Fresnel 是定义在无限小且无限光滑的微表面上的，例如前述的反射定律与折射定律的计算过程。而 Lambertian diffuse 材质是针对整个宏表面，在整个宏表面上均匀反射，因此 diffuse 材质的反射率不需要 Fresnel 这样精确的微观尺度。
 
@@ -235,6 +233,10 @@ $$
 f_{diffuse}=\frac{albedo}{\pi}=\frac{C_{diffuse}}{\pi}
 $$
 
+漫反射渲染方程写为
+$$
+L_o(\omega_o)=\frac{\rho}{\pi}\cdot\int_{\Omega^+}  L_i(\omega_i)\cdot \cos\theta_i\space d\omega_i
+$$
 
 
 
