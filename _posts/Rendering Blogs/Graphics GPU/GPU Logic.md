@@ -1,111 +1,94 @@
 ---
-typora-copy-images-to: ..\..\..\images\Rendering Blogs\Profile\${filename}.assets
+typora-copy-images-to: ..\..\..\images\Rendering Blogs\Graphics GPU\${filename}.assets
 typora-root-url: ..\..\..\
 title: GPU Logic
 keywords: GPU, Performance
 categories:
-- [Rendering Blogs, Profile]
+- [Rendering Blogs, Graphics GPU]
 mathjax: true
 ---
 
 # 1 Life of triangle [[1]](#[1])
 
-<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline.png" alt="NVIDIA's logical pipeline" style="zoom:150%;" />
+<img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline.png" alt="NVIDIA's logical pipeline" style="zoom:150%;" />
 
 ## 1.1 GPUs are super parallel work distributors
 
-为什么需要这些复杂性？在图形渲染中，我们需要处理数据扩展 (data amplification) 的问题，这会带来大量不确定的工作负载。每个 draw call 可能生成不同数量的三角形。裁剪后的顶点数量可能与最初的三角形数量不同。在背面剔除和深度剔除之后，不同的三角形可能生成不同的像素。
+在图形管线执行过程中，存在数据扩展 (data amplification) 的问题，这会带来大量不确定的工作负载。每个 draw call 可能生成不同数量的三角形。裁剪后的顶点数量可能与最初的三角形数量不同。在背面剔除和深度剔除之后，不同的三角形可能生成不同的像素。因此，现代GPU处理图元时遵循的是逻辑流水线，即芯片通过复用多个内部引擎实现了逻辑流水线（即三角形经过的各个步骤）。
 
-因此，现代GPU让它们的基本图元（三角形、线、点）遵循的是逻辑流水线，而不是物理流水线。在早期（G80统一架构之前，如DX9硬件、PS3、Xbox360），流水线在芯片上通过不同的阶段体现，工作依次通过这些阶段处理。G80架构基本上对部分单元进行了复用，可以根据负载在顶点着色器和片段着色器之间切换，但仍然以串行方式处理图元、光栅化等。而从Fermi架构开始，流水线变得完全并行，这意味着芯片通过复用多个内部引擎实现了逻辑流水线（即三角形经过的各个步骤）。
-
-假设有两个三角形A和B。它们可能处于不同的逻辑流水线步骤中。例如，A已经被变换，正在进行光栅化。一些像素可能在执行fragment shader，一些像素可能被深度缓冲剔除（Z-cull），还有一些像素可能已经写入帧缓冲区，而还有一些可能仍在等待。同时，三角形B可能在提取顶点数据。因此，尽管每个三角形都需要经过这些逻辑步骤，但许多三角形生命周期的不同阶段可以同时被处理。整个draw call任务被拆分为许多较小的任务，甚至是子任务，这些任务可以并行运行。每个任务都会根据可用的资源进行调度，这种调度不限于某种特定类型的任务（例如顶点着色和片段着色可以并行进行）。
-
-可以把这想象成一条分叉的河流。并行的pipeline stream是彼此独立的，每条pipeline都有自己的时间线，有些pipeline可能分支更多。如果我们用颜色对GPU中的单元进行编码，标记它们当前正在处理的三角形或draw call，那么整个系统就会像一片多彩的“闪烁灯”景象 :)
+图元输入到图形管线中，不同的图元可能处于不同的逻辑流水线步骤中。例如有两个三角形 A、B。A已经被变换，正在进行光栅化。一些像素可能在执行fragment shader，一些像素可能被深度缓冲剔除（Z-cull），还有一些像素可能已经写入帧缓冲区，而还有一些可能仍在等待。同时，三角形B可能在提取顶点数据。因此，许多三角形生命周期的不同阶段可以同时被处理。整个draw call任务被拆分为许多较小的任务，甚至是子任务，这些任务可以并行运行。每个任务都会根据可用的资源进行调度，这种调度不限于某种特定类型的任务（例如顶点着色和片段着色可以并行进行）。
 
 ## 1.2 GPU architecture
 
-<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_maxwell_gpu.png" alt="GPU architecture" style="zoom: 90%;" />
+<img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_maxwell_gpu.png" alt="GPU architecture" style="zoom: 90%;" />
 
-由于 Fermi 架构的 NVIDIA GPU 拥有相似的基本架构设计，其中核心部分是一个管理所有任务的 **Giga Thread Engine**。GPU 被划分为多个 **GPC（Graphics Processing Cluster，图形处理簇）**，每个 GPC 包含多个 **SM（Streaming Multiprocessor，流式多处理器）** 和一个 **Raster Engine（光栅引擎）**。在这些组件之间有大量的互联结构，其中最为重要的是 **Crossbar（交叉开关）**，它允许任务在 GPC 或其他功能单元（例如 **ROP（Render Output Unit，渲染输出单元）** 子系统）之间迁移。
+Fermi 架构的 NVIDIA GPU 拥有相似的基本架构设计，其中核心部分是一个管理所有任务的 **Giga Thread Engine**。GPU 被划分为多个 **GPC (Graphics Processing Cluster，图形处理簇)**，每个 GPC 包含多个 **SM (Streaming Multiprocessor，流式多处理器)** 和一个 **Raster Engine (光栅引擎)**。在这些组件之间有大量的互联结构，其中最为重要的是 **Crossbar (交叉开关)**，它允许任务在 GPC 或其他功能单元（例如 **ROP (Render Output Unit，渲染输出单元)** 子系统）之间迁移。
 
-程序员编写的任务（例如着色器程序的执行）实际上是由 SM 来完成的。SM 包含许多 **Core（核心）**，这些核心负责执行线程的数学运算。例如，一个线程可以对应于一个顶点着色器或像素着色器的调用。这些核心以及其他单元由 **Warp Scheduler（Warp 调度器）** 驱动，每个 Warp 调度器管理一组 32 个线程（称为一个 Warp），并将需要执行的指令交给 **Dispatch Unit（分发单元）**。指令的逻辑由调度器处理，而核心本身并不负责逻辑计算。核心接收到的指令类似于“*"sum register 4234 with register 4235 and store in 4230*”。相比之下，GPU 的核心显得相对“简单”，而 CPU 的核心则更“智能”。GPU 将智能设计集中在更高的架构层面，协调整个系统（甚至多个系统）的工作。
+着色器程序的执行实际上是由 SM 来完成的。SM 包含许多 **Core (核心)**，这些核心负责执行线程的数学运算。例如，一个线程可以对应于一个顶点/像素着色器的调用。这些核心以及其他单元由 **Warp Scheduler (Warp 调度器)** 驱动，每个 Warp 调度器管理一组 32 个线程 (称为一个 Warp)，并将需要执行的指令交给 **Dispatch Unit (分发单元)**。指令的逻辑由调度器处理，而核心本身并不负责逻辑计算。核心接收到的指令类似于“*"sum register 4234 with register 4235 and store in 4230*”。相比之下，GPU 的核心显得相对“简单”，而 CPU 的核心则更“智能”。GPU 将智能设计集中在更高的架构层面，协调整个系统 (甚至多个系统) 的工作。
 
 GPU 上这些单元的具体数量（例如每个 GPC 包含多少个 SM，每个 GPU 有多少个 GPC）取决于具体的芯片配置。
 
 ## 1.3 The logical pipeline
 
-<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_begin.png" alt="The logical pipeline" style="zoom:80%;" />
+<img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_begin.png" alt="The logical pipeline" style="zoom:80%;" />
 
 为简化起见，省略了一些细节。我们假设 drawcall 引用了一些已经填充好数据的 index- and vertex-buffer，这些缓冲区存储在 GPU 的 DRAM 中，并且仅使用 VS 和 PS：
 
-1. 程序在图形 API中发起 drawcall。该调用最终会到达驱动程序，驱动程序对调用进行一些合法性验证，并将命令以 GPU 可读取的编码形式插入到 **pushbuffer（推送缓冲区）** 中。在此过程中，CPU 端可能出现许多瓶颈，因此程序员需要合理使用 API，并采用能充分利用现代 GPU 性能的技术。
+1. 程序在图形 API中发起 drawcall。该调用最终会到达驱动程序，驱动程序对调用进行一些合法性验证，并将命令以 GPU 可读取的编码形式插入到 **pushbuffer (推送缓冲区)** 中。在此过程中，CPU 端可能出现许多瓶颈，因此程序员需要合理使用 API，并采用能充分利用现代 GPU 性能的技术。
 
-2. 一段时间后或显式的“flush”调用，驱动程序在 pushbuffer 中积累了足够的工作量，将其发送给 GPU 进行处理（这一过程可能需要操作系统的部分参与）。GPU 的 **Host Interface（主机接口）** 接收到这些命令，并通过 **Front End（前端）** 进行处理。
+2. 一段时间后或显式的“flush”调用，驱动程序在 pushbuffer 中积累了足够的工作量，将其发送给 GPU 进行处理（这一过程可能需要操作系统的部分参与）。GPU 的 **Host Interface (主机接口)** 接收到这些命令，并通过 **Front End (前端)** 进行处理。
 
-3. 接着，工作分发开始于 **Primitive Distributor（图元分发器）**，通过处理 index buffer 中的索引数据生成三角形工作批次，并将其分发到多个 **GPC**。
+3. 接着，**Primitive Distributor (图元分发器)** 通过处理 index buffer 中的索引数据生成 triangle work batches (三角形工作批次)，并将其分发到多个 **GPC**。
 
-   <img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_sm.png" alt="The logical pipeline" style="zoom:90%;" />
-
-4. 在 **GPC（图形处理簇）** 内，一个 **SM（流式多处理器）** 的 **Poly Morph Engine（多边形形变引擎）** 负责从三角形索引中提取顶点数据（即Vertex Fetch）
+4. 在 **GPC** 内，一个 **SM** 的 **Poly Morph Engine (多边形形变引擎)** 负责从三角形索引中提取顶点数据，即Vertex Fetch
+   <img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_sm.png" alt="The logical pipeline" style="zoom:90%;" />
 
 5. 完成顶点数据的提取后，**SM** 内会调度一个由 32 个线程组成的 **Warp（线程束）** 来处理这些顶点数据。
 
-6. **SM** 的 **Warp 调度器（Warp Scheduler）** 会按照顺序为整个 Warp 发出指令。这些线程以 lock-step 执行每条指令，但如果某些线程无需执行某条指令，则它们可以被单独屏蔽。屏蔽线程的情况可能包括：
+6. **SM** 的 **Warp 调度器** 会按照顺序为整个 Warp 发出指令。这些线程以 lock-step 执行每条指令，但如果某些线程无需执行某条指令，则它们可以被单独屏蔽。屏蔽线程的情况可能包括：
 
    - **例 1**：当前指令属于 “if (true)” 分支，但某个线程的数据条件计算结果为 “false”；
    - **例 2**：某个线程已经满足了循环终止条件，而其他线程尚未满足。
 
-   因此，当着色器中出现大量分支分歧（**branch divergence**）时，将显著增加 Warp 中所有线程的执行时间。
-
-   需要注意的是，线程无法独立推进，它们只能以 Warp 为单位共同推进！不过，Warp 之间是相互独立的。
+   因此，当着色器中出现大量分支分歧（**branch divergence**）时，将显著增加 Warp 中所有线程的执行时间。需要注意的是，线程无法独立推进，它们只能以 Warp 为单位共同推进！不过，Warp 之间是相互独立的。
 
 7. Warp 的一条指令可能一次完成，也可能需要多个调度周期。例如，在 **SM** 中，处理 **load/store** 操作的单元通常比处理基本数学运算的单元要少。
 
-8. 由于某些指令（特别是内存加载）需要更长的时间来完成，**Warp 调度器** 会切换到其他不需要等待内存的 Warp。这正是 **GPU** 克服内存读取延迟的关键机制：通过切换warp，隐藏延迟并减少等待时间。为了实现快速切换，调度器管理的所有线程在 **寄存器文件（register file）** 中拥有各自独立的寄存器。如果某个着色器程序需要的寄存器较多，那么可容纳的线程/Warps 就会减少。这意味着可供切换的 Warp 也减少，从而在等待指令完成（尤其是内存加载）期间，可执行的有效工作量也会减少。这种**寄存器资源的限制**可能会导致效率下降。
+8. 由于某些指令（特别是内存加载）需要更长的时间来完成，**Warp 调度器** 会切换到其他不需要等待内存的 Warp。**GPU** 正是通过切换warp，隐藏延迟并减少等待时间。为了实现快速切换，调度器管理的所有线程在 **寄存器文件 (register file)** 中拥有各自独立的寄存器。如果着色器程序需要的寄存器较多，那么可容纳的线程/Warps 就会减少。这意味着可供切换的 Warp 也减少，从而在等待指令完成（尤其是内存加载）期间，可执行的有效工作量也会减少。这种**寄存器资源的限制**可能会导致效率下降。也就是说，warp调度器会将寄存器分配给调度的warp，直接warp执行结束，如果寄存器被当前warp用完，即使当前wrap在执行耗时的访存操作，SM也只能等待。
 
-   <img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_memoryflow.png" alt="The logical pipeline" style="zoom:90%;" />
+   <img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_memoryflow.png" alt="The logical pipeline" style="zoom:90%;" />
 
 9. 当 **Warp** 完成所有顶点着色器的指令后，其结果将由 **视口变换** 进行处理。随后，三角形将在 clip space volume 内进行裁剪，准备进入光栅化阶段。 在这一过程中，我们使用 **L1 缓存** 和 **L2 缓存** 来存储并管理各个任务之间通信的数据。
 
-   <img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_raster.png" alt="The logical pipeline" style="zoom:90%;" />
+   <img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_raster.png" alt="The logical pipeline" style="zoom:90%;" />
 
-10. 现在到了令人兴奋的部分，我们的三角形即将被分解，并可能会离开当前所在的 **GPC（图形处理簇）**。三角形的 **bounding box** 被用来决定哪些**光栅引擎（raster engines）**需要对其进行处理，因为每个光栅引擎负责屏幕上的多个 **tile（瓦片）**。 随后，三角形通过 **Work Distribution Crossbar** 被发送到一个或多个 GPC。此时，我们有效地将三角形分解成许多更小的任务进行处理。
+10. 三角形即将进入光栅化阶段，此时三角形将被分解，并可能会离开当前所在的 **GPC**。根据三角形的像素 **bounding box** 将其分解为**光栅引擎 (raster engines)**接收的 **tile** 单位，每个光栅引擎负责屏幕上的多个 **tile**。 随后，三角形的tiles通过 **Work Distribution Crossbar** 被发送到一个或多个 GPC。
 
-11. 在目标 **SM** 内的 **Attribute Setup（属性设置）** 阶段，会确保插值数据（例如在顶点着色器中生成的输出数据）被转换为适合像素着色器的格式。
+11. 在目标 **SM** 内的 **Attribute Setup (属性设置)** 阶段，会确保插值数据（例如在顶点着色器中生成的输出数据）被转换为适合像素着色器的格式。
 
-12. **GPC（图形处理簇）** 的 **Raster Engine** 会处理其接收到的三角形，为其负责的区域生成像素信息，并执行背面剔除和深度剔除操作。
+12. **GPC** 的 **Raster Engine** 为其接收到的三角形的区域生成像素信息，并执行背面剔除和深度剔除操作。
 
-13. 接着，我们将像素处理任务按 32 个线程（即 8 组 **2x2 像素块**，quad）进行批处理。这种 **2x2 像素块** 是像素着色器的最小处理单位。这种划分方式允许我们计算一些导数，例如用于纹理的 MIP 映射过滤（当像素块内的纹理坐标变化剧烈时，选择更高层级的 MIP）。对于那些 2x2 像素块中采样位置并未实际覆盖三角形的线程，将会被屏蔽（例如通过 **gl_HelperInvocation**）。然后，像素着色任务将交由本地 SM 的某个 Warp 调度器进行管理。
+13. 接着，对像素的处理任务仍然需要分配到warp上执行，因此按 32 个线程 (即 8 组 **2x2 quad**) 进行批处理。这种 **2x2 像素块** 的最小处理单位，允许我们在像素着色器中计算一些导数，例如用于纹理的 MIP 映射过滤。对于那些 2x2 像素块中未实际覆盖三角形的线程，将会被屏蔽，例如通过 gl_HelperInvocation。然后，像素着色任务将交由本地 SM 的某个 Warp 调度器进行管理。
 
-14. 像素着色线程在 **Warp 调度器** 中执行的调度逻辑，与顶点着色器阶段的类似。线程仍然以锁步（**lock-step**）方式运行，这种方式特别有用，因为它可以高效访问 **像素块** 内的数值（几乎零成本），因为所有线程的数据都保证在同一指令点完成计算（通过扩展如 **NV_shader_thread_group** 实现）
+14. 像素着色线程在 **Warp 调度器** 中执行的调度逻辑，与顶点着色器阶段的类似。线程仍然以锁步 (**lock-step**) 方式运行，这种方式特别有用，因为它可以高效访问 **像素块** 内的数值（几乎零成本），因为所有线程的数据都保证在同一指令点完成计算（通过扩展如 **NV_shader_thread_group** 实现）
 
-    ![The logical pipeline](/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_end.png)
+15. 最终要将像素着色器计算结果更新到FrameBuffer。像素着色器已经完成了颜色的计算，并生成了需要写入 Render Targets 的深度值。在将这些数据交给 **ROP (Render Output Unit) ** 子系统之前，我们需要考虑三角形的原始 API 排序（指的是draw call提交次序）。这是因为 **ROP 子系统** 本身包含多个 ROP 单元，在其中执行深度测试、与 Framebuffer 的 Blending 等任务。
 
-15. 我们完成了吗？快了！
-
-    像素着色器已经完成了颜色的计算，并生成了需要写入 Render Targets 的深度值。在将这些数据交给 **ROP（Render Output Unit）** 子系统之前，我们需要考虑三角形的原始 API 排序（像 `gl_PrimitiveID` ?）。这是因为 **ROP 子系统** 本身包含多个 ROP 单元，在其中执行深度测试、与 Framebuffer 的 Blending 等任务。
+    ![The logical pipeline](/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_end.png)
 
     这些操作必须是原子性的（**Atomic**，一次只能处理一组颜色和深度值），以确保当两个三角形覆盖同一个像素时，不会出现一个三角形的颜色与另一个三角形的深度值相结合的情况。
 
-    此外，NVIDIA 通常会应用内存压缩技术（**Memory Compression**）来降低对内存带宽的需求，从而提升“有效”带宽（详见 GTX 980 的 PDF 文档）。
-
-终于完成了！
-
-我们已经成功将像素写入到渲染目标中。希望这部分信息能帮助您了解 GPU 内部的工作流和数据流。同时，这也可以帮助您理解为何与 CPU 的同步操作会对性能造成如此大的影响。
-
-当 GPU 必须等待所有任务完成且没有新的工作提交时，所有硬件单元都会变为闲置状态（**Idle**）。当发送新的工作任务时，整个 GPU 从完全闲置状态到再次完全负载需要一些时间，尤其是对于那些规模较大的 GPU。
-
-在下面的图片中，您可以看到一个 CAD 模型的渲染结果，其中不同的颜色表示了对图像贡献的不同 **SM（流式多处理器）** 或 **Warp ID**。需要注意，这种结果通常是帧间不一致的（**Frame-Coherent**），因为工作分配会在每一帧之间有所变化。这幅场景使用了许多 **Draw Calls** 渲染完成，其中一些可能是并行处理的（通过 **NSIGHT** 工具可以观察到这种 **Draw Call** 的并行性）。
-
-<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/fermipipeline_distribution.png" alt="The logical pipeline" style="zoom:80%;" />
-
-# 2 The Peak-Performance-Percentage Analysis Method for Optimizing Any GPU Workload
 
 
+终于完成了！下面是对绘制一个模型过程中，不同顶点或者像素所分配到的 SM 或者 Warp 的可视化。
+
+<img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/fermipipeline_distribution.png" alt="The logical pipeline" style="zoom:80%;" />
+
+# 2 GPU工作负载优化方法
 
 这篇博客介绍基于硬件指标 (hardware metrics) 的性能分析方法，帮助我们了解整个GPU的使用情况，哪些硬件单元或子单元限制了性能，以及它们的运行效率多大程度接近各自的最大吞吐量 (maximum throughput，也成为 Speed of Light **SOL**)。假设应用程序没有使用异步计算或异步复制队列，那么这种硬件为中心的信息可以映射回图形 API 和着色器的操作，进而为提升任何给定工作负载的 GPU 性能提供指导，如图 1 所示： 
 
-<img src="/images/Rendering Blogs/Profile/GPU Logic.assets/pasted-image-0-8-1024x246.png" alt="GPU performance data flow" style="zoom: 90%;" />
+<img src="/images/Rendering Blogs/Graphics GPU/GPU Logic.assets/pasted-image-0-8-1024x246.png" alt="GPU performance data flow" style="zoom: 90%;" />
 
 
 
