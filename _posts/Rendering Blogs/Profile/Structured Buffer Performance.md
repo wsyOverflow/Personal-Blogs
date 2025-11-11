@@ -145,7 +145,7 @@ StructuredBuffer<Light> LightBuf;
 
 ```c++
 /*
- * Two constant buffers, with lesser-used shadow data in second
+ * 方案一：拆分为两个常量缓冲区，次高频阴影数据分离到第二个cb中
  */
 struct LightBase // 64 bytes, 1024 lights possible
 {
@@ -176,10 +176,8 @@ cbuffer LightCBufShadow
     LightShadow LightBufShadow[MAX_LIGHTS];
 };
 
-
 /*
- * One constant buffer for core parameters with structured buffer
- * for infrequently used parameters and divergent access
+ * 方案二：核心参数使用常量缓冲区+低频参数保留结构化缓冲区
  */
 
 // MAX_LIGHTS restricted by only the one structure
@@ -196,6 +194,8 @@ StructuredBuffer<Light> LightBuf;
 ### 3.1.2 处理分散访问
 
 处理分散访问则更加简单。如上代码注释所述，只需在 culling 阶段绑定数据的结构化缓冲区副本即可解决问题。这需要为数据创建冗余副本，但额外的 64-256 KB 数据代价很小，换来的性能提升可能高达帧率的 10%。
+
+
 
 # Reference
 

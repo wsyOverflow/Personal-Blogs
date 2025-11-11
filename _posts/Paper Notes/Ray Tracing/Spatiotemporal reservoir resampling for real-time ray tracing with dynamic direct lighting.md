@@ -2,7 +2,7 @@
 typora-copy-images-to: ..\..\..\images\Paper Notes\Ray Tracing\${filename}.assets
 typora-root-url: ..\..\..\
 title: Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting
-keywords: ray-tracing, sampling, manly-light
+keywords: ray-tracing, ReSTIR, manly-light
 categories:
 - [Paper Notes, Ray Tracing]
 mathjax: true
@@ -16,11 +16,20 @@ mathjax: true
 在以往的重要性采样方法中，
 
 1. IS：最基础的采用单一分布采样技术在复杂被积函数下有较大方差，如多项乘积形式的渲染方程仅能与其中一项成比例。
-2. MIS：再到能够结合多种采样策略的多重重要性采样，其以一定权重对来自不同采样策略的样本进行无偏结合，本质上使用多个简单的源分布的线性组合来拟合复杂的目标分布。结合过程与乘积形式的渲染方程有一定偏差，且复杂度较高，每次采样一个目标分布的样本都需要对所有源分布生成一批样本。
-3. RIS：重采样重要性采样是先从易采样的源分布中采样一批候选样本，再以一定（源分布与目标分布结合的）权重从候选样本中挑选出近似于目标分布的样本。这种重采样过程从概率角度看是采样后的采样，是一种概率分布上的乘积形式，更接近渲染方程的乘积形式。但是单一源分布对最终的目标分布影响很大，如果在重采样过程中引入多重重要性采样，会得到平方级的开销增长。
-4. WRS：基于权重的蓄水池采样可以不断接收输入样本来优化自身样本的分布，其所需输入为样本及其关联权重，更新过程为在保持自身分布不变的条件下，来选择是否替换自身样本。蓄水池采样过程是一种流式的更新。
+2. MIS：再到能够结合多种采样策略的**多重重要性采样**，其以一定权重对来自不同采样策略的样本进行无偏结合，本质上使用多个简单的源分布的线性组合来拟合复杂的目标分布。结合过程与乘积形式的渲染方程有一定偏差，且复杂度较高，每次采样一个目标分布的样本都需要对所有源分布生成一批样本。
+3. RIS：**重采样重要性采样**是先从易采样的源分布中采样一批候选样本，再以一定（目标分布/源分布）权重从候选样本中挑选出近似于目标分布的样本。而在蒙特卡洛中矫正这种近似，将积分采样分布矫正为 (目标分布/权重均值)。这种重采样过程从概率角度看是采样后的采样，是一种概率分布上的乘积形式，更接近渲染方程的乘积形式。但是单一源分布对最终的目标分布影响很大，如果在重采样过程中引入多重重要性采样，会得到平方级的开销增长。
+4. WRS：**基于权重的蓄水池采样**可以不断接收输入样本来优化自身样本的分布，其所需输入为样本及其关联权重，更新过程为在保持自身分布不变的条件下，来选择是否替换自身样本。具体来说，接收输入样本 $x_{m+1}$ 时，以概率 $\frac{w_{m+1}}{\sum w_i}$ 来决定是否替换已有样本 $x_i$，这样的替换过程仍然保持了蓄水池中样本的分布为 (自身权重/权重和)。蓄水池采样过程是一种流式的更新，即可以不断输入新样本，更新内部数据：$\mathrm{w}_{sum},M$ 以及输出样本 $y$
 
-作者基于 RIS 理论，设计蓄水池采样的更新权重，将二者结合，提出了高效的基于蓄水池采样的流式重采样方法。对于着色点像素的 reservoir 而言，可以不断接收来自源分布的候选样本，越来越接近目标分布。作者基于与当前像素分布相近的reservoir也可用来复用提升采样率，提出了在时空间上，对reservoir的直接复用算法。reservoir之间的复用过程，输入的是相邻/历史像素的reservoir，因此reservoir不需要维护昂贵的input stream，仅需要当前状态即可。通过将复用reservoir的分布作为源分布，而当前像素的reservoir作为目标分布，即可得到reservoir的无偏RIS过程。
+作者基于 RIS 理论，设计蓄水池采样的更新权重，将二者结合，提出了高效的基于蓄水池采样的流式重采样方法。对于着色点像素的 reservoir 而言，可以不断接收来自源分布的候选样本，越来越接近目标分布。作者基于与当前像素分布相近的reservoir也可用来复用提升采样率，提出了在时空间上，对reservoir的直接复用算法。reservoir之间的复用过程，输入的是相邻/历史像素的reservoir，因此reservoir不需要维护昂贵的input stream，仅需要当前状态即可。这两种reservoir更新过程如下：
+
+- 接收来自源分布的候选样本的更新：蓄水池的更新权重设计为 (目标分布/源分布)。基于 RIS 理论，最终蓄水池输出样本 $y$ 以及对应蒙特卡洛权重 $\large \frac{\mathrm{w}_{sum}/M}{\hat{p}(y)}$
+
+- 复用其它reservoir的更新：reservoir 之间的复用，是对reservoir当前状态的复用过程，即考虑输入reservoir的 $\mathrm{w}_{sum},M$。 而将复用reservoir $q'$的分布作为源分布，当前reservoir $q$ 的分布作为目标分布，使用 $\large \frac{\hat{p}_q(r_{q'}{_{.}}y)}{\hat{p}_{q'}(r_{q'}{_{.}}y)}$ 来矫正权重，更新权重为，
+  $$
+  r_{q'}{_{.}}\mathrm{w}_{sum} \cdot \frac{\hat{p}_q(r_{q'}{_{.}}y)}{\hat{p}_{q'}(r_{q'}{_{.}}y)}=\hat{p}_q(r_{q'}{_{.}}y) \cdot r_{q'}{_{.}}W \cdot r_{q'}{_{.}}M
+  $$
+
+复用reservoir过程中，spatial reuse 可以多次调用，temporal reuse 通过motion vector找到对应的历史像素。但由于目标分布选取的是 unshadowed path contribution，随着样本数增加，visibility带来的噪声会越明显，对此作者选择在时空间复用前，先对复用reservoir样本trace shadow ray，丢弃遮挡项。
 
 # 2 Background
 
@@ -176,22 +185,21 @@ Reservoir 样本累积了目前见过的所有样本信息，如果可以基于�
 
 算法理解：
 
-- [算法3](#Algo 3)中给出了reservoir接收一个来自源分布样本的更新过程，在结合多个reservoir时，需要考虑reservoir的已输入的候选样本数量 $M$，因此权重采用的是reservoir目前为止的权重之和 $w_{sum}$
+- [算法3](#Algo 3)中给出了reservoir接收一个来自源分布样本的更新过程，在结合多个reservoir时，需要考虑reservoir的已输入的候选样本数量 $M$，因此权重采用的是reservoir目前为止的权重之和 $\mathrm{w}_{sum}$
 
 - 在复用 reservoir 样本时，新的 reservoir 的 source PDF 就是输入 reservoir 样本的分布。具体来说，权重调整系数来自于重采样理论 $\eqref{discrete PDF}$ 中的权重 $\frac{\hat{p}}{p}$，此时复用样本的分布 $\hat{p}_{q'}$ 作为源分布，当前像素reservoir的目标分布作为目标分布 $\hat{p}_q$。
 
 -  $\{r_1,\cdots,r_k\}$ 为复用样本 $q'$ 的reservoir，由[算法3](#Algo 3)可知，
   $$
-  r_i.W=\frac{1}{\hat{p}_{q'}(r_i.y)}\cdot\left(\frac{r_i.w_{sum}}{r_i.M}\right)
+  r_i{_{.}}W=\frac{1}{\hat{p}_{q'}(r_i{_{.}}y)}\cdot\left(\frac{r_i{_{.}}\mathrm{w}_{sum}}{r_i{_{.}}M}\right)
   $$
   
-
 - 考虑到权重调整，得到最终的更新权重为
   $$
   \begin{align}
-  &r_i.w_{sum} \cdot \frac{\hat{p}_q(r_i.y)}{\hat{p}_{q'}(r_i.y)} \\
-  &=\underbrace{r_i.W \cdot r_i.M \cdot \hat{p}_{q'}(r_i.y)}_{r_i.w_{sum}} \cdot \frac{\hat{p}_q(r_i.y)}{\hat{p}_{q'}(r_i.y)}\\
-  &=\hat{p}_q(r_i.y) \cdot r_i.W \cdot r_i.M
+  &r_i{_{.}}\mathrm{w}_{sum} \cdot \frac{\hat{p}_q(r_i{_{.}}y)}{\hat{p}_{q'}(r_i{_{.}}y)} \\
+  &=\underbrace{r_i{_{.}}W \cdot r_i{_{.}}M \cdot \hat{p}_{q'}(r_i{_{.}}y)}_{r_i{_{.}}\mathrm{w}_{sum}} \cdot \frac{\hat{p}_q(r_i{_{.}}y)}{\hat{p}_{q'}(r_i{_{.}}y)}\\
+  &=\hat{p}_q(r_i{_{.}}y) \cdot r_i{_{.}}W \cdot r_i{_{.}}M
   \end{align}
   $$
   
@@ -333,7 +341,7 @@ $$
 
 # Reference
 
-<a name="[1]">[1]</a> Benedikt Bitterli, Chris Wyman, Matt Pharr, Peter Shirley, Aaron Lefohn, and Wojciech Jarosz. 2020. Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting. <i>ACM Trans. Graph.</i> 39, 4, Article 148 (August 2020), 17 pages. DOI:https://doi.org/10.1145/3386569.3392481
+<a name="[1]">[1]</a> Benedikt Bitterli, Chris Wyman, Matt Pharr, Peter Shirley, Aaron Lefohn, and Wojciech Jarosz. 2020. Spatiotemporal reservoir resampling for real-time ray tracing with dynamic direct lighting. <i>ACM Trans. Graph.</i> 39, 4, Article 148 (August 2020), 17 pages.
 
 <a name="[2]">[2]</a> Alastair J Walker. 1974. New fast method for generating discrete random numbers with arbitrary frequency distributions. Electronics Letters 10, 8 (1974), 127–128.  
 
@@ -345,7 +353,7 @@ $$
 
 ## 1. <a name="App 1">重要性采样为何要到 Resample Importance Sampling</a>
 
-蒙特卡洛积分估计理论上是进行越多的采样次数，越接近 groud-truth，但实际中要限制开销，只能以有限的采样次数来进行积分估计。因此，采样分布如果能够更倾向于采样被积函数较重要的区域，则会更快达到收敛，这就是重要性采样 (IS) 的思想。$\eqref{IS MC}$ 式描述的重要性采样(IS)是蒙特卡洛积分的最简单的无偏估计，因为 IS 只采样了一种分布，例如 cosine-weighted sample hemisphere 就是根据渲染方程 cosine 项的特征得到的采样方法。
+蒙特卡洛积分估计理论上是进行越多的采样次数，越接近 ground-truth，但实际中要限制开销，只能以有限的采样次数来进行积分估计。因此，采样分布如果能够更倾向于采样被积函数较重要的区域，则会更快达到收敛，这就是重要性采样 (IS) 的思想。$\eqref{IS MC}$ 式描述的重要性采样(IS)是蒙特卡洛积分的最简单的无偏估计，因为 IS 只采样了一种分布，例如 cosine-weighted sample hemisphere 就是根据渲染方程 cosine 项的特征得到的采样方法。
 
 但通常渲染方程被积函数包含多项，如 $\eqref{simple render equation}$ 中的 $\rho,L_e,G$ 等。于是又有了，$\eqref{MIS MC}$ 式描述的多重重要性采样，MIS 使用了多种采样策略，每种采样策略都进行了一次重要性采样，最后将多次重要性采样结合在一起。虽说，MIS 考虑了多种分布，但其估计量形式相当于是**对多种分布的线性组合**，而对于渲染方程而言，其被积函数是多项的乘积形式，因此不能更好地采样被积函数的重要性区域。
 

@@ -80,7 +80,7 @@ GPU 具有非常多的处理器核心，在 Nvidia 中称为 Streaming Multiproc
 
   运行在一个SM上，因此 threads block 内的线程可以有轻量级地同步与数据交换。
 
-  - 同一个SM共享一个L2 cache，因此可以仅使用shared memory，要快于buffer、image这类global memory。
+  - 同一个SM共享一个L1 cache，因此可以仅使用shared memory，要快于buffer、image这类global memory。
   - 同一个warp线程也可以使用warp内的数据同步（更快）
 
   当一个threads block被调度到某一个SM上时，就只会在这个SM上执行 (中间可能会有hide latency导致的换入换出)，否则L2 cache就无法保证是同一个。
